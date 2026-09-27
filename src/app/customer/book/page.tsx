@@ -631,7 +631,7 @@ function BookServiceContent() {
       {/* Hidden Native Audio Player for rock-solid playback */}
       <audio
         ref={audioPlayerRef}
-        src={audioBlobUrl || audioUrl || ""}
+        src={audioBlobUrl || audioUrl || undefined}
         preload="metadata"
         onEnded={() => {
           setIsPlayingAudio(false);
