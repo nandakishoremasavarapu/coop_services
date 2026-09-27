@@ -466,7 +466,7 @@ export default function ProviderHomePage() {
 
                           {/* Chat & Call Shortcuts */}
                           <Link
-                            href={`/customer/messages?bookingId=${booking.id}`}
+                            href={`/provider/messages?bookingId=${booking.id}`}
                             className="w-10 h-10 rounded-xl bg-[#f2f3ff] text-[#134e3f] border border-[#d1ddd8] flex items-center justify-center hover:bg-[#eaedff] transition-colors"
                             title="Chat with Customer"
                           >
