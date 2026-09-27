@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
 import { ErrorNotice } from "@/components/ui/states";
+import { ShramSetuLogo } from "@/components/ShramSetuLogo";
 
 export type GatewayRole = "customer" | "provider" | "admin";
 
@@ -139,7 +140,14 @@ export function AuthDialog({ open, onClose, defaultRole = "customer" }: AuthDial
     <Modal
       open={open}
       onClose={onClose}
-      title={mode === "login" ? "Sign in to Shram Setu" : "Create your account"}
+      title={
+        <div className="flex items-center gap-3">
+          <ShramSetuLogo size={36} priority />
+          <span className="text-lg font-bold text-ink-900 leading-tight">
+            {mode === "login" ? "Sign in to Shram Setu" : "Create your account"}
+          </span>
+        </div>
+      }
       description="One cooperative account for services, work and governance."
       size="lg"
     >

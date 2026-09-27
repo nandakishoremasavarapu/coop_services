@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Brand } from "@/components/shells/brand";
+import { ShramSetuLogo } from "@/components/ShramSetuLogo";
 import { AuthDialog, type GatewayRole } from "@/components/auth/AuthDialog";
 import { ServiceIcon } from "@/lib/serviceIcons";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -134,7 +135,7 @@ export default function LandingPage() {
             {/* Copy */}
             <div className="max-w-xl">
               <p className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-200 px-3.5 py-1.5 text-xs font-bold text-brand-800">
-                <ShieldCheck className="size-4" aria-hidden />
+                <ShramSetuLogo size={18} priority />
                 Cooperative-owned • Worker-first • Transparent
               </p>
               <h1 className="mt-5 text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight text-ink-950 leading-[1.08] text-balance">
@@ -178,12 +179,10 @@ export default function LandingPage() {
                 <div className="bg-panel rounded-2xl border border-line shadow-raised p-5 -rotate-1 motion-safe:animate-[enter-up_0.5s_var(--ease-out-soft)_both]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="size-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
-                        <Wrench className="size-5" />
-                      </span>
+                      <ShramSetuLogo size={40} className="rounded-xl shadow-xs" priority />
                       <div>
                         <p className="text-sm font-bold text-ink-900">Fan repair &amp; installation</p>
-                        <p className="text-xs text-ink-400">Booking #BK-4F2A1C</p>
+                        <p className="text-xs text-ink-400">Booking #BK-4F2A1C • Shram Setu</p>
                       </div>
                     </div>
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 text-brand-800 px-2.5 py-1 text-xs font-semibold">

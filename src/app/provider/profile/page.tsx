@@ -28,6 +28,7 @@ import { Field, Input, Textarea, Select, ChoiceCard } from "@/components/ui/form
 import { Modal, ConfirmDialog } from "@/components/ui/modal";
 import { LoadingBlock, Toast } from "@/components/ui/states";
 import { StarRating } from "@/components/StarRating";
+import { Brand } from "@/components/shells/brand";
 
 interface ProviderProfile {
   id?: string;
@@ -393,6 +394,10 @@ export default function ProviderProfilePage() {
           </div>
           <p className="mt-3 text-xs text-brand-900/70 leading-relaxed">
             Your 10% society contribution funds the platform, insurance cover and the member welfare pool.
+          </p>
+          <p className="mt-3 pt-3 border-t border-brand-200/50 text-2xs text-brand-900/60 inline-flex items-center gap-1.5 justify-center w-full">
+            <Brand compact size={18} />
+            Shram Setu — Partner Collective
           </p>
         </div>
       </div>

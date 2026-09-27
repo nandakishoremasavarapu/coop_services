@@ -6,6 +6,16 @@ export const metadata: Metadata = {
   title: "Shram Setu — Cooperative Digital Services Marketplace",
   description:
     "A cooperative-owned digital marketplace connecting households with verified, fairly-paid skilled service providers.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo/logo.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/logo/logo.png" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
@@ -18,6 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" href="/logo/logo.png" />
+        <link rel="apple-touch-icon" href="/logo/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}

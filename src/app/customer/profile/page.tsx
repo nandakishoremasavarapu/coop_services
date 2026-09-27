@@ -282,7 +282,7 @@ export default function CustomerProfilePage() {
             Platform fees flow directly into fair technician remuneration and the cooperative welfare fund.
           </p>
           <p className="mt-3 text-2xs text-success-800/60 inline-flex items-center gap-1.5 justify-center">
-            <Brand compact size={14} className="text-success-800/60" />
+            <Brand compact size={18} />
             Shram Setu — व श्रमिक सहकार
           </p>
         </div>

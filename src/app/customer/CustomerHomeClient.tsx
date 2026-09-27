@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card";
 import { PageContainer, PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/badge";
 import { BookingTimeline } from "@/components/ui/timeline";
+import { ShramSetuLogo } from "@/components/ShramSetuLogo";
 import type { ServiceCategory } from "@/lib/types";
 
 interface BookingItem {
@@ -266,7 +267,10 @@ export default function CustomerHomeClient() {
 
           {/* Cooperative guarantee */}
           <Card className="p-5 bg-brand-950 border-brand-950 text-white">
-            <p className="text-xs font-bold uppercase tracking-[0.1em] text-brand-300">Why Shram Setu?</p>
+            <div className="flex items-center gap-2 mb-3">
+              <ShramSetuLogo size={22} priority />
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-brand-300">Why Shram Setu?</p>
+            </div>
             <ul className="mt-3.5 space-y-3">
               {[
                 { t: "Verified local members", d: "Identity & trade audited by your society" },
