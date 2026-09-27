@@ -96,8 +96,7 @@ export function AdminShell({ role, children }: AdminShellProps) {
     try {
       await apiFetch("/api/auth/logout", { method: "POST" });
     } catch {}
-    router.push("/");
-    router.refresh();
+    window.location.href = "/";
   };
 
   const jurisdiction =

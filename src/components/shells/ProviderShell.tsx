@@ -119,8 +119,7 @@ export function ProviderShell({ children }: { children: React.ReactNode }) {
     try {
       await apiFetch("/api/auth/logout", { method: "POST" });
     } catch {}
-    router.push("/");
-    router.refresh();
+    window.location.href = "/";
   };
 
   return (

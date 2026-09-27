@@ -29,6 +29,13 @@ const ROLE_GATEWAYS: {
   key: GatewayRole;
   title: string;
   who: string;
+  portalBadge: string;
+  targetPath: string;
+  phone: string;
+  pass: string;
+  roleTag: string;
+  accentBorder: string;
+  badgeColor: string;
   description: string;
   points: string[];
   cta: string;
@@ -36,29 +43,50 @@ const ROLE_GATEWAYS: {
 }[] = [
   {
     key: "customer",
-    title: "Customer",
-    who: "Citizen / Household",
-    description: "Book trusted home services from verified cooperative members with transparent pricing.",
-    points: ["Verified local technicians", "Transparent rate cards", "Escrow-protected payments"],
-    cta: "Book a service",
+    title: "Citizen / Customer",
+    who: "Citizen • Household • Resident",
+    portalBadge: "Citizen Portal",
+    targetPath: "/customer",
+    phone: "9100000001",
+    pass: "password123",
+    roleTag: "Citizen Auth",
+    accentBorder: "hover:border-brand-500 border-brand-200/80",
+    badgeColor: "bg-brand-50 text-brand-800 border-brand-200",
+    description: "Book verified home services from cooperative members with escrow protection and zero middlemen markups.",
+    points: ["Verified local technicians", "Transparent cooperative rate cards", "Escrow-protected payments"],
+    cta: "Enter Citizen Portal",
     icon: <UserRound className="size-5.5" />,
   },
   {
     key: "provider",
     title: "Service Provider",
-    who: "Member-owner / Skilled tradesperson",
-    description: "Join your labour cooperative, receive work requests directly and keep what you earn.",
-    points: ["Direct job dispatch", "Fair 90% member share", "Welfare & insurance cover"],
-    cta: "Join as provider",
+    who: "Member-Owner • Skilled Tradesperson",
+    portalBadge: "Member-Owner Portal",
+    targetPath: "/provider",
+    phone: "9200000001",
+    pass: "password123",
+    roleTag: "Provider Auth",
+    accentBorder: "hover:border-accent-500 border-accent-200/80",
+    badgeColor: "bg-accent-50 text-accent-800 border-accent-200",
+    description: "Access direct job dispatch, manage active service requests, track 90% member share earnings and cooperative welfare.",
+    points: ["Direct job dispatch & notifications", "Fair 90% member share earnings", "Cooperative welfare & insurance cover"],
+    cta: "Enter Provider Portal",
     icon: <Wrench className="size-5.5" />,
   },
   {
     key: "admin",
-    title: "Administration",
-    who: "Federation / Society officials",
-    description: "Govern members, bookings, transactions, welfare schemes and cooperative analytics.",
-    points: ["Member verification", "Operations dashboards", "Welfare fund management"],
-    cta: "Open console",
+    title: "Federation & Admin",
+    who: "Federation Official • Society Steward",
+    portalBadge: "Governance Console",
+    targetPath: "/admin",
+    phone: "9000000001",
+    pass: "admin123",
+    roleTag: "Official Auth",
+    accentBorder: "hover:border-ink-500 border-ink-300/80",
+    badgeColor: "bg-ink-100 text-ink-900 border-ink-300",
+    description: "Govern verified members, inspect booking lifecycle, manage transactions, resolve complaints and audit cooperative funds.",
+    points: ["Member & KYC verification", "Live operations & financial dashboards", "Welfare & dispute resolution console"],
+    cta: "Enter Admin Console",
     icon: <Landmark className="size-5.5" />,
   },
 ];
@@ -94,6 +122,8 @@ export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authRole, setAuthRole] = useState<GatewayRole>("customer");
   const [categories, setCategories] = useState<ServiceCategory[] | null>(null);
+  const [quickLoggingIn, setQuickLoggingIn] = useState<GatewayRole | null>(null);
+  const [quickError, setQuickError] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch("/api/services/categories")
@@ -107,20 +137,80 @@ export default function LandingPage() {
     setAuthOpen(true);
   };
 
+  const handleQuickLogin = async (role: GatewayRole) => {
+    const target = ROLE_GATEWAYS.find((g) => g.key === role) || ROLE_GATEWAYS[0];
+    setQuickLoggingIn(role);
+    setQuickError(null);
+    try {
+      const res = await apiFetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ phone: target.phone, password: target.pass }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.error || "Login failed");
+      }
+      // Force page navigation so server layouts completely reload the new session
+      window.location.href = target.targetPath;
+    } catch (err: any) {
+      setQuickError(err.message || "Failed to log in. Please try the sign in modal.");
+      setQuickLoggingIn(null);
+    }
+  };
+
   return (
     <div className="min-h-dvh bg-panel text-ink-900">
       {/* ============================================================ Top navigation */}
       <header className="sticky top-0 z-50 bg-panel/90 backdrop-blur-md border-b border-line">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-4">
           <Brand href="/" sub="Cooperative Services" size={36} />
-          <nav aria-label="Site" className="hidden md:flex items-center gap-7 text-sm font-semibold text-ink-500">
+
+          <nav aria-label="Site" className="hidden lg:flex items-center gap-7 text-sm font-semibold text-ink-500">
+            <a href="#portals" className="hover:text-ink-900 transition-colors">Portals &amp; Logins</a>
             <a href="#services" className="hover:text-ink-900 transition-colors">Services</a>
             <a href="#how" className="hover:text-ink-900 transition-colors">How it works</a>
             <a href="#cooperative" className="hover:text-ink-900 transition-colors">Cooperative promise</a>
           </nav>
-          <Button onClick={() => openAuth("customer")} variant="primary" size="sm" className="rounded-full px-5">
-            Sign in
-          </Button>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Direct role shortcuts */}
+            <div className="hidden sm:flex items-center gap-1 p-1 bg-ink-100/70 rounded-full border border-line text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => handleQuickLogin("customer")}
+                disabled={quickLoggingIn !== null}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-ink-700 hover:text-ink-950 hover:bg-white transition-all disabled:opacity-50"
+                title="Direct login: Citizen (9100000001)"
+              >
+                <UserRound className="size-3.5 text-brand-600" />
+                <span>Citizen</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin("provider")}
+                disabled={quickLoggingIn !== null}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-ink-700 hover:text-ink-950 hover:bg-white transition-all disabled:opacity-50"
+                title="Direct login: Provider (9200000001)"
+              >
+                <Wrench className="size-3.5 text-accent-600" />
+                <span>Provider</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin("admin")}
+                disabled={quickLoggingIn !== null}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-ink-700 hover:text-ink-950 hover:bg-white transition-all disabled:opacity-50"
+                title="Direct login: Admin (9000000001)"
+              >
+                <Landmark className="size-3.5 text-ink-900" />
+                <span>Admin</span>
+              </button>
+            </div>
+
+            <Button onClick={() => openAuth("customer")} variant="primary" size="sm" className="rounded-full px-4 sm:px-5">
+              Sign in
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -147,13 +237,36 @@ export default function LandingPage() {
                 carpenters and 20+ other trades — run by labour cooperatives, not middlemen.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Button onClick={() => openAuth("customer")} size="lg" className="w-full sm:w-auto">
-                  Book a service
+                <Button
+                  onClick={() => handleQuickLogin("customer")}
+                  disabled={quickLoggingIn !== null}
+                  size="lg"
+                  className="w-full sm:w-auto"
+                >
+                  {quickLoggingIn === "customer" ? "Entering Citizen Portal..." : "Enter Citizen Portal"}
                   <ArrowRight className="size-4.5" aria-hidden />
                 </Button>
-                <Button onClick={() => openAuth("provider")} size="lg" variant="outline" className="w-full sm:w-auto">
-                  Join as a provider
+                <Button
+                  onClick={() => handleQuickLogin("provider")}
+                  disabled={quickLoggingIn !== null}
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  {quickLoggingIn === "provider" ? "Entering Provider Portal..." : "Enter Provider Portal"}
                 </Button>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-ink-500">
+                <span>Cooperative official or administrator?</span>
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin("admin")}
+                  disabled={quickLoggingIn !== null}
+                  className="font-bold text-brand-700 hover:underline inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  <Landmark className="size-3.5" />
+                  {quickLoggingIn === "admin" ? "Entering Admin Console..." : "Enter Admin & Federation Console (9000000001) →"}
+                </button>
               </div>
 
               {/* Plausible product facts — no vanity metrics */}
@@ -237,42 +350,130 @@ export default function LandingPage() {
         </section>
 
         {/* ============================================================ Role gateway */}
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-          <div className="max-w-2xl">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-950">Choose your portal</h2>
-            <p className="mt-2.5 text-ink-600">
-              One platform, three experiences — households booking services, members doing the work,
-              and the cooperative officials who govern them.
-            </p>
+        <section id="portals" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-700 bg-brand-50 border border-brand-200 px-3 py-1 rounded-full">
+                Independent Portals &amp; Credentials
+              </span>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink-950">
+                Choose your portal
+              </h2>
+              <p className="mt-2 text-ink-600">
+                Three purpose-built experiences with dedicated navigation and credentials — for citizens, member-owners, and federation officials.
+              </p>
+            </div>
+            <div className="text-xs text-ink-500 font-medium">
+              Click &quot;1-Click Login&quot; on any portal card to enter immediately.
+            </div>
           </div>
-          <div className="mt-8 grid md:grid-cols-3 gap-5">
-            {ROLE_GATEWAYS.map((g) => (
-              <div
-                key={g.key}
-                className="group rounded-3xl border border-line bg-panel p-6 shadow-card hover:shadow-raised hover:border-brand-300 transition-all flex flex-col"
+
+          {quickError && (
+            <div className="mt-6 rounded-2xl bg-danger-50 border border-danger-200 p-4 text-sm text-danger-800 flex items-center justify-between">
+              <span>{quickError}</span>
+              <button
+                type="button"
+                onClick={() => setQuickError(null)}
+                className="font-bold underline text-xs ml-4 cursor-pointer"
               >
-                <span className="size-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center" aria-hidden>
-                  {g.icon}
-                </span>
-                <h3 className="mt-4 text-lg font-extrabold text-ink-950">{g.title}</h3>
-                <p className="text-xs font-bold uppercase tracking-wide text-brand-700 mt-0.5">{g.who}</p>
-                <p className="mt-2.5 text-sm text-ink-600 leading-relaxed">{g.description}</p>
-                <ul className="mt-4 space-y-2">
-                  {g.points.map((pt) => (
-                    <li key={pt} className="flex items-center gap-2 text-sm text-ink-700">
-                      <BadgeCheck className="size-4 text-brand-600 shrink-0" aria-hidden />
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-6 pt-4 border-t border-line">
-                  <Button onClick={() => openAuth(g.key)} variant="secondary" className="w-full group-hover:bg-brand-700 group-hover:text-white group-hover:border-brand-700 transition-colors">
-                    {g.cta}
-                    <ArrowRight className="size-4" aria-hidden />
-                  </Button>
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          <div className="mt-8 grid md:grid-cols-3 gap-6">
+            {ROLE_GATEWAYS.map((g) => {
+              const isLoggingIn = quickLoggingIn === g.key;
+              return (
+                <div
+                  key={g.key}
+                  className={cn(
+                    "group rounded-3xl border bg-panel p-6 shadow-card hover:shadow-raised transition-all flex flex-col justify-between",
+                    g.accentBorder
+                  )}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="size-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center" aria-hidden>
+                        {g.icon}
+                      </span>
+                      <span className={cn("text-2xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border", g.badgeColor)}>
+                        {g.portalBadge}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-4 text-xl font-extrabold text-ink-950">{g.title}</h3>
+                    <p className="text-xs font-bold uppercase tracking-wide text-brand-700 mt-0.5">{g.who}</p>
+                    <p className="mt-2.5 text-sm text-ink-600 leading-relaxed">{g.description}</p>
+
+                    {/* Distinct Section Features */}
+                    <div className="mt-4 pt-3 border-t border-line">
+                      <p className="text-2xs font-bold uppercase tracking-wider text-ink-400 mb-2">Portal Capabilities</p>
+                      <ul className="space-y-2">
+                        {g.points.map((pt) => (
+                          <li key={pt} className="flex items-center gap-2 text-sm text-ink-700">
+                            <BadgeCheck className="size-4 text-brand-600 shrink-0" aria-hidden />
+                            <span>{pt}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Actual Credentials Display */}
+                    <div className="mt-5 rounded-2xl border border-line bg-canvas/80 p-3.5 text-xs font-mono">
+                      <div className="flex items-center justify-between text-ink-500 font-sans font-bold uppercase tracking-wider text-2xs mb-2">
+                        <span>Actual Credentials</span>
+                        <span className="font-semibold text-brand-700">{g.roleTag}</span>
+                      </div>
+                      <div className="space-y-1.5 text-ink-800">
+                        <div className="flex justify-between items-center py-1 bg-panel px-2.5 rounded-lg border border-line/70">
+                          <span className="text-ink-500 font-sans text-xs">Login Phone:</span>
+                          <span className="font-bold tracking-wide select-all text-xs text-ink-950 font-mono">{g.phone}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-1 bg-panel px-2.5 rounded-lg border border-line/70">
+                          <span className="text-ink-500 font-sans text-xs">Password:</span>
+                          <span className="font-bold tracking-wide select-all text-xs text-ink-950 font-mono">{g.pass}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-1 bg-panel px-2.5 rounded-lg border border-line/70">
+                          <span className="text-ink-500 font-sans text-xs">Landing Route:</span>
+                          <span className="font-bold text-brand-700 text-xs font-mono">{g.targetPath}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-6 pt-4 border-t border-line space-y-2">
+                    <Button
+                      onClick={() => handleQuickLogin(g.key)}
+                      disabled={quickLoggingIn !== null}
+                      variant="primary"
+                      className="w-full justify-center text-sm font-bold shadow-sm"
+                    >
+                      {isLoggingIn ? (
+                        <>
+                          <span className="size-4 rounded-full border-2 border-white/30 border-t-white animate-spin mr-2" />
+                          Authenticating &amp; Routing...
+                        </>
+                      ) : (
+                        <>
+                          1-Click Login to {g.title}
+                          <ArrowRight className="size-4 ml-1.5" aria-hidden />
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => openAuth(g.key)}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs text-ink-600 hover:text-ink-950"
+                    >
+                      Open {g.title} Sign In Modal
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

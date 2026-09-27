@@ -45,8 +45,7 @@ export function AccountMenu({ name, identifier, roleLabel, profileHref, notifica
     } catch {
       /* session is cleared best-effort */
     }
-    router.push("/");
-    router.refresh();
+    window.location.href = "/";
   };
 
   return (
