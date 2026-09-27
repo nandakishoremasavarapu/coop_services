@@ -136,7 +136,9 @@ function CustomerMessagesContent() {
       const res = await apiFetch(`/api/messages?conversationId=${convId}`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.messages || []);
+        const fetchedMessages: ChatMessage[] = data.messages || [];
+        // Remove repeated IDs if overlapping polling requests return the same message.
+        setMessages(Array.from(new Map(fetchedMessages.map((message) => [message.id, message])).values()));
       }
     } catch (err) {
       console.error("Error fetching messages:", err);
@@ -202,11 +204,12 @@ function CustomerMessagesContent() {
         // Replace optimistic message and append auto-reply if present
         setMessages((prev) => {
           const filtered = prev.filter((m) => m.id !== tempId);
-          const updated = [...filtered, data.message];
+          // Polling may already have included this message.
+          const updated = [...filtered.filter((message) => message.id !== data.message.id), data.message];
           if (data.autoReply) {
             setTimeout(() => {
               setIsTyping(false);
-              setMessages((current) => [...current, data.autoReply]);
+              setMessages((current) => current.some((message) => message.id === data.autoReply.id) ? current : [...current, data.autoReply]);
             }, 1000);
           } else {
             setIsTyping(false);
