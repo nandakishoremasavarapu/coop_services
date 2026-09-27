@@ -120,7 +120,9 @@ function ProviderMessagesContent() {
       const res = await apiFetch(`/api/messages?conversationId=${convId}`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.messages || []);
+        const fetchedMessages: ChatMessage[] = data.messages || [];
+        // Remove repeated IDs if overlapping polling requests return the same message.
+        setMessages(Array.from(new Map(fetchedMessages.map((message) => [message.id, message])).values()));
       }
     } catch {}
     finally { if (!silent) setLoadingMessages(false); }
@@ -153,8 +155,9 @@ function ProviderMessagesContent() {
         const data = await res.json();
         setMessages((prev) => {
           const filtered = prev.filter((m) => m.id !== tempId);
-          const updated = [...filtered, data.message];
-          if (data.autoReply) { setTimeout(() => { setIsTyping(false); setMessages((cur) => [...cur, data.autoReply]); }, 1000); } else { setIsTyping(false); }
+          // Polling may already have included this message.
+          const updated = [...filtered.filter((message) => message.id !== data.message.id), data.message];
+          if (data.autoReply) { setTimeout(() => { setIsTyping(false); setMessages((cur) => cur.some((message) => message.id === data.autoReply.id) ? cur : [...cur, data.autoReply]); }, 1000); } else { setIsTyping(false); }
           return updated;
         });
         fetchConversations();
