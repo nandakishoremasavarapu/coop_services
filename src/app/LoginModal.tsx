@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 type Role = "customer" | "provider" | "admin";
 
@@ -56,7 +57,7 @@ export default function LoginModal({ defaultRole, onClose }: LoginModalProps) {
           ? { phone: form.phone, password: form.password }
           : { ...form, role: apiRole };
 
-      const res = await fetch(endpoint, {
+      const res = await apiFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

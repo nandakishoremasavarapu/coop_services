@@ -7,6 +7,7 @@ import { SwipeButton } from "@/components/SwipeButton";
 import { getServiceIcon } from "@/lib/serviceIcons";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { StarRating } from "@/components/StarRating";
+import { apiFetch } from "@/lib/api";
 
 interface BookingData {
   booking: {
@@ -39,7 +40,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const [cashAmount, setCashAmount] = useState("");
 
   const fetchData = async () => {
-    const res = await fetch(`/api/bookings/${id}`);
+    const res = await apiFetch(`/api/bookings/${id}`);
     const d = await res.json();
     setData(d as BookingData);
     setLoading(false);
@@ -50,7 +51,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
   const performAction = async (action: string, extra: Record<string, unknown> = {}) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/bookings/${id}`, {
+      const res = await apiFetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...extra }),
@@ -69,7 +70,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     try {
       const originalAmount = parseFloat(data?.booking.finalPrice ?? "0");
       const proposedAmount = originalAmount + parseFloat(additionalAmount);
-      const res = await fetch("/api/price-revisions", {
+      const res = await apiFetch("/api/price-revisions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

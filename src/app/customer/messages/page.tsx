@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SahakariEmblem from "@/components/SahakariEmblem";
 import CustomerNav from "@/app/customer/CustomerNav";
+import { apiFetch } from "@/lib/api";
 
 interface OtherParticipant {
   id: string;
@@ -100,7 +101,7 @@ function CustomerMessagesContent() {
       if (targetBookingId && targetProviderId) {
         url += `?bookingId=${encodeURIComponent(targetBookingId)}&providerId=${encodeURIComponent(targetProviderId)}`;
       }
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
         const convList: ConversationItem[] = data.conversations || [];
@@ -132,7 +133,7 @@ function CustomerMessagesContent() {
   const fetchMessages = async (convId: string, silent = false) => {
     if (!silent) setLoadingMessages(true);
     try {
-      const res = await fetch(`/api/messages?conversationId=${convId}`);
+      const res = await apiFetch(`/api/messages?conversationId=${convId}`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data.messages || []);
@@ -186,7 +187,7 @@ function CustomerMessagesContent() {
 
     try {
       setIsTyping(true);
-      const res = await fetch("/api/messages", {
+      const res = await apiFetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

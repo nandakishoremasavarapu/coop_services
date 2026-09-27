@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
 import { ServiceCategory } from "@/lib/types";
+import { apiFetch } from "@/lib/api";
 
 interface CustomerHomeClientProps {
   userId: string;
@@ -45,7 +46,7 @@ export default function CustomerHomeClient({ userId }: CustomerHomeClientProps) 
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch("/api/services/categories");
+      const res = await apiFetch("/api/services/categories");
       const data = await res.json();
       if (data.categories?.length > 0) {
         setCategories(data.categories);
@@ -57,7 +58,7 @@ export default function CustomerHomeClient({ userId }: CustomerHomeClientProps) 
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await apiFetch("/api/auth/me");
       const data = await res.json();
       if (data.user?.profileName) {
         setProfileName(data.user.profileName);
@@ -67,7 +68,7 @@ export default function CustomerHomeClient({ userId }: CustomerHomeClientProps) 
 
   const fetchActiveBooking = async () => {
     try {
-      const res = await fetch("/api/bookings?role=customer");
+      const res = await apiFetch("/api/bookings?role=customer");
       const data = await res.json();
       if (data.bookings && data.bookings.length > 0) {
         // Look for active in-progress booking

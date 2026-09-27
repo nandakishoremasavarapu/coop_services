@@ -6,6 +6,7 @@ import Link from "next/link";
 import SahakariEmblem from "@/components/SahakariEmblem";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getServiceIcon } from "@/lib/serviceIcons";
+import { apiFetch } from "@/lib/api";
 
 interface ProviderProfile {
   id?: string;
@@ -57,7 +58,7 @@ export default function ProviderHomePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await apiFetch("/api/auth/me");
       if (res.ok) {
         const data = await res.json();
         const p = data.user?.profile as ProviderProfile | null;
@@ -71,7 +72,7 @@ export default function ProviderHomePage() {
 
   const fetchJobs = async () => {
     try {
-      const res = await fetch("/api/bookings?role=provider");
+      const res = await apiFetch("/api/bookings?role=provider");
       if (res.ok) {
         const data = await res.json();
         setJobs(data.bookings ?? []);
@@ -92,11 +93,11 @@ export default function ProviderHomePage() {
     setUpdatingAvail(true);
     const newAvail = availability === "available" ? "unavailable" : "available";
     try {
-      const meRes = await fetch("/api/auth/me");
+      const meRes = await apiFetch("/api/auth/me");
       const meData = await meRes.json();
       const providerId = meData.user?.profile?.id;
       if (providerId) {
-        await fetch(`/api/providers/${providerId}`, {
+        await apiFetch(`/api/providers/${providerId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ availability: newAvail }),
@@ -117,7 +118,7 @@ export default function ProviderHomePage() {
     setSubmittingQuote(true);
     setQuoteSuccessMsg("");
     try {
-      const res = await fetch("/api/quotes", {
+      const res = await apiFetch("/api/quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -145,7 +146,7 @@ export default function ProviderHomePage() {
 
   const handleUpdateJobStatus = async (bookingId: string, action: string) => {
     try {
-      const res = await fetch(`/api/bookings/${bookingId}`, {
+      const res = await apiFetch(`/api/bookings/${bookingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),

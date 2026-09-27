@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, AreaChart, Area } from "recharts";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { TrendingUp, Zap, Target, Award } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 interface Stats {
   bookingStatusCounts: { status: string; count: number }[];
@@ -17,7 +18,7 @@ export default function AdminAnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/stats")
+    apiFetch("/api/admin/stats")
       .then((r) => r.json())
       .then((d) => {
         if (d && !d.error) {

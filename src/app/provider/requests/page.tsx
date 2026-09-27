@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, MapPin, Clock, ChevronRight } from "lucide-react";
 import { getServiceIcon } from "@/lib/serviceIcons";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 export default function ProviderRequestsPage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function ProviderRequestsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/bookings?role=provider")
+    apiFetch("/api/bookings?role=provider")
       .then((r) => r.json())
       .then((d) => {
         const all = d.bookings ?? [];

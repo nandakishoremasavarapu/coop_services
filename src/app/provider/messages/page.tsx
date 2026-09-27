@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SahakariEmblem from "@/components/SahakariEmblem";
+import { apiFetch } from "@/lib/api";
 
 interface OtherParticipant {
   id: string;
@@ -89,7 +90,7 @@ function ProviderMessagesContent() {
   const fetchConversations = async (targetBookingId?: string) => {
     try {
       const url = "/api/conversations" + (targetBookingId ? `?bookingId=${encodeURIComponent(targetBookingId)}` : "");
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
         const convList: ConversationItem[] = data.conversations || [];
@@ -116,7 +117,7 @@ function ProviderMessagesContent() {
   const fetchMessages = async (convId: string, silent = false) => {
     if (!silent) setLoadingMessages(true);
     try {
-      const res = await fetch(`/api/messages?conversationId=${convId}`);
+      const res = await apiFetch(`/api/messages?conversationId=${convId}`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data.messages || []);
@@ -147,7 +148,7 @@ function ProviderMessagesContent() {
     setInputText(""); setPhotoPreview(null); setAudioUrl(null);
     try {
       setIsTyping(true);
-      const res = await fetch("/api/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: activeConversation.id, content: text.trim() || undefined, mediaUrl: media || undefined }) });
+      const res = await apiFetch("/api/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: activeConversation.id, content: text.trim() || undefined, mediaUrl: media || undefined }) });
       if (res.ok) {
         const data = await res.json();
         setMessages((prev) => {

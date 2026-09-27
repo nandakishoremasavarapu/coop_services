@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getServerSession } from "@/lib/session";
 import AdminSidebar from "./AdminSidebar";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+  const session = await getServerSession();
   if (!session) redirect("/");
   if (!["society_admin", "federation_admin", "super_admin"].includes(session.role)) {
     if (session.role === "customer") redirect("/customer");

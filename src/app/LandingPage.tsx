@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
+import { apiFetch } from "@/lib/api";
 
 type RoleType = "citizen" | "member" | "admin";
 
@@ -75,7 +76,7 @@ export default function LandingPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

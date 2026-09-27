@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
 import { ServiceCategory, SpecificService } from "@/lib/types";
+import { apiFetch } from "@/lib/api";
 
 // Standard guild scopes for electrical or generic trades
 const DEFAULT_SPECIFIC_SERVICES = [
@@ -102,7 +103,7 @@ function BookServiceContent() {
 
   // Fetch categories on mount
   useEffect(() => {
-    fetch("/api/services/categories")
+    apiFetch("/api/services/categories")
       .then((r) => r.json())
       .then((d) => {
         if (d.categories) setCategories(d.categories);
@@ -112,7 +113,7 @@ function BookServiceContent() {
 
   // Fetch user profile to prefill customer's real registered address if available
   useEffect(() => {
-    fetch("/api/auth/me")
+    apiFetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
         if (d.user?.profile) {
@@ -128,7 +129,7 @@ function BookServiceContent() {
   // Fetch specific services for selected category
   useEffect(() => {
     if (categoryId) {
-      fetch(`/api/services/specific?categoryId=${categoryId}`)
+      apiFetch(`/api/services/specific?categoryId=${categoryId}`)
         .then((r) => r.json())
         .then((d) => {
           if (d.services && d.services.length > 0) {
@@ -581,7 +582,7 @@ function BookServiceContent() {
         preferredTime = new Date().toISOString();
       }
 
-      const res = await fetch("/api/bookings", {
+      const res = await apiFetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """
-Coop Service - Automated Startup Script
+Shram Setu - Automated Startup Script
 ======================================
 This script automatically:
 1. Validates the environment (Node.js, npm, Python).
-2. Sets up environment variables (.env).
-3. Installs all project dependencies (backend & frontend).
-4. Launches the full-stack server (Next.js handling both API backend & UI frontend).
+2. Sets up environment variables (.env files for frontend & backend).
+3. Installs all project dependencies (backend venv & frontend node_modules).
+4. Launches the full-stack app:
+     - FastAPI backend  (MongoDB Atlas / in-memory mock)  -> port 8000
+     - Next.js frontend                                        -> port 3000
 5. Automatically detects server readiness and opens the app in your browser.
 6. Handles graceful shutdown on Ctrl+C.
+
+Usage:
+    python run.py                 # start everything
+    python run.py --no-browser    # do not open the browser automatically
+    python run.py --port 3000     # choose the frontend port
+    python run.py --install       # force reinstall dependencies
 """
 
 import os
@@ -16,6 +24,7 @@ import sys
 import time
 import socket
 import shutil
+import secrets
 import urllib.request
 import urllib.error
 import webbrowser
@@ -23,6 +32,8 @@ import threading
 import subprocess
 import argparse
 from pathlib import Path
+
+BACKEND_PORT = 8000
 
 # ANSI color formatting
 class Colors:
@@ -85,15 +96,6 @@ def free_port(port: int):
             pass
 
 
-def check_postgres():
-    """Check if PostgreSQL appears to be listening on port 5432."""
-    if not is_port_in_use(5432):
-        log_warn("PostgreSQL does not appear to be running on 127.0.0.1:5432.")
-        log_warn("The web server will start, but database operations may require a running")
-        log_warn("PostgreSQL database or an updated DATABASE_URL inside your .env file.")
-    else:
-        log_success("PostgreSQL detected on port 5432.")
-
 def get_npm_command() -> str:
     """Find the npm executable compatible with Windows or Unix."""
     if sys.platform == "win32":
@@ -106,34 +108,64 @@ def get_npm_command() -> str:
             return npm_cmd
     return "npm"
 
-def setup_environment(project_dir: Path) -> Path:
-    """Ensure .env exists with required default configuration."""
-    env_file = project_dir / ".env"
-    default_db_url = "postgresql://postgres:postgres@127.0.0.1:5432/app_db"
-    
-    if not env_file.exists():
-        log_info("Creating default .env file...")
-        content = (
-            "# Environment configuration for Coop Service\n"
-            f"DATABASE_URL=\"{default_db_url}\"\n"
-            "NODE_ENV=\"development\"\n"
-            "PORT=3000\n"
-        )
-        env_file.write_text(content, encoding="utf-8")
-        log_success("Created .env with default DATABASE_URL.")
-    else:
-        log_info(".env configuration file found.")
-    
-    return env_file
 
-def install_dependencies(project_dir: Path, npm_cmd: str, force: bool = False):
+def get_python_command() -> str:
+    """Python executable to use for the backend venv (current interpreter)."""
+    return sys.executable or "python"
+
+
+def setup_environment(project_dir: Path) -> None:
+    """Ensure .env files exist with sensible defaults (never overwrite)."""
+    # ---- Frontend .env ---------------------------------------------------
+    frontend_env = project_dir / ".env"
+    if not frontend_env.exists():
+        log_info("Creating frontend .env (Next.js)...")
+        frontend_env.write_text(
+            "# Environment configuration for Shram Setu (frontend)\n"
+            f"NEXT_PUBLIC_API_BASE_URL=\"http://localhost:{BACKEND_PORT}\"\n"
+            "NODE_ENV=\"development\"\n"
+            "PORT=3000\n",
+            encoding="utf-8",
+        )
+        log_success(f"Created {frontend_env} pointing at the FastAPI backend on port {BACKEND_PORT}.")
+    else:
+        log_info("Frontend .env configuration found.")
+
+    # ---- Backend .env ----------------------------------------------------
+    backend_env = project_dir / "backend" / ".env"
+    if not backend_env.exists():
+        log_info("Creating backend/.env (FastAPI)...")
+        backend_env.write_text(
+            "# Shram Setu backend configuration\n"
+            "# Paste your MongoDB Atlas connection string below (Atlas -> Connect -> Drivers).\n"
+            "# While empty, the backend runs on an in-memory mock database (data is NOT saved).\n"
+            "MONGODB_URI=\n"
+            "MONGODB_DB_NAME=shram_setu\n"
+            f"SECRET_KEY={secrets.token_hex(32)}\n"
+            "SESSION_TTL_DAYS=7\n"
+            "CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000\n"
+            "PLATFORM_FEE_PCT=0.10\n"
+            "SEED_ON_START=true\n",
+            encoding="utf-8",
+        )
+        log_success("Created backend/.env with a generated SECRET_KEY.")
+        log_warn("IMPORTANT: open backend/.env and set MONGODB_URI to your MongoDB Atlas")
+        log_warn("connection string. Until then the backend uses a temporary in-memory database.")
+    else:
+        if "MONGODB_URI=mongodb" in backend_env.read_text(encoding="utf-8"):
+            log_success("Backend .env found with a MongoDB connection string configured.")
+        else:
+            log_info("Backend .env found (MONGODB_URI empty -> in-memory mock database will be used).")
+
+
+def install_dependencies(project_dir: Path, npm_cmd: str, force: bool = False) -> None:
     """Installs npm dependencies if node_modules is missing or force=True."""
     node_modules = project_dir / "node_modules"
-    
+
     if node_modules.exists() and not force:
-        log_info("node_modules found. Dependencies are ready (use --install to force re-install).")
+        log_info("node_modules found. Frontend dependencies are ready (use --install to force re-install).")
         return
-    
+
     log_info(f"Running '{npm_cmd} install --no-audit --no-fund'... This may take a moment.")
     try:
         use_shell = sys.platform == "win32"
@@ -144,19 +176,68 @@ def install_dependencies(project_dir: Path, npm_cmd: str, force: bool = False):
             check=True
         )
         if proc.returncode == 0:
-            log_success("All dependencies installed successfully.")
+            log_success("Frontend dependencies installed successfully.")
     except subprocess.CalledProcessError as e:
         log_error(f"Failed to install dependencies: {e}")
         sys.exit(1)
     except FileNotFoundError:
-        log_error(f"Could not execute '{npm_cmd}'. Please ensure Node.js and npm are installed in PATH.")
+        log_error(f"Could not execute '{npm_cmd}'. Please ensure Node.js and npm are installed in your PATH.")
         sys.exit(1)
+
+
+def setup_backend(project_dir: Path, force: bool = False) -> None:
+    """Create the backend virtual environment and install requirements."""
+    backend_dir = project_dir / "backend"
+    venv_dir = backend_dir / ".venv"
+
+    if sys.platform == "win32":
+        pip_cmd = venv_dir / "Scripts" / "pip.exe"
+        python_cmd = venv_dir / "Scripts" / "python.exe"
+    else:
+        pip_cmd = venv_dir / "bin" / "pip"
+        python_cmd = venv_dir / "bin" / "python"
+
+    if venv_dir.exists() and pip_cmd.exists() and not force:
+        log_info("Backend virtual environment found (.venv).")
+    else:
+        log_info("Creating backend Python virtual environment...")
+        try:
+            subprocess.run(
+                [get_python_command(), "-m", "venv", str(venv_dir)],
+                cwd=str(backend_dir),
+                check=True,
+            )
+            log_success("Virtual environment created at backend/.venv")
+        except subprocess.CalledProcessError as e:
+            log_error(f"Failed to create the virtual environment: {e}")
+            log_error("Make sure the 'venv' module is available (python -m venv).")
+            sys.exit(1)
+
+    marker = venv_dir / ".requirements.installed"
+    req_file = backend_dir / "requirements.txt"
+    if marker.exists() and req_file.stat().st_mtime < marker.stat().st_mtime and not force:
+        log_info("Backend dependencies are up to date.")
+        return
+
+    log_info("Installing backend Python dependencies (FastAPI, Motor, bcrypt)...")
+    try:
+        subprocess.run(
+            [str(pip_cmd), "install", "-r", str(req_file), "--quiet"],
+            cwd=str(backend_dir),
+            check=True,
+        )
+        marker.touch()
+        log_success("Backend dependencies installed successfully.")
+    except subprocess.CalledProcessError as e:
+        log_error(f"Failed to install backend dependencies: {e}")
+        sys.exit(1)
+
 
 def wait_and_open_browser(target_url: str, port: int, stop_event: threading.Event):
     """Waits until the server is reachable and then opens the default browser."""
     log_info(f"Waiting for server to become ready on port {port}...")
     start_time = time.time()
-    max_wait_seconds = 120
+    max_wait_seconds = 180
 
     while not stop_event.is_set():
         if time.time() - start_time > max_wait_seconds:
@@ -174,7 +255,7 @@ def wait_and_open_browser(target_url: str, port: int, stop_event: threading.Even
                 # Any HTTP response code (200, 302, 404, etc.) confirms the server is live
                 break
             except Exception:
-                # Port is accepting connections but Next.js is still initializing
+                # Port is accepting connections but the server is still initializing
                 pass
 
         time.sleep(0.5)
@@ -184,7 +265,9 @@ def wait_and_open_browser(target_url: str, port: int, stop_event: threading.Even
 
     print("\n" + "=" * 60)
     log_success(f"Application is LIVE at {Colors.BOLD}{target_url}{Colors.RESET}")
-    log_info("Opening in your default web browser...")
+    log_info(f"FastAPI backend : http://localhost:{BACKEND_PORT}  (docs: /docs)")
+    log_info(f"MongoDB         : configured via backend/.env -> MONGODB_URI")
+    log_info("Opening the app in your default web browser...")
     print("=" * 60 + "\n")
 
     try:
@@ -193,24 +276,19 @@ def wait_and_open_browser(target_url: str, port: int, stop_event: threading.Even
         log_warn(f"Could not open browser automatically: {e}")
         log_info(f"Please open your browser manually and visit: {target_url}")
 
+
 def kill_process_tree(pid: int):
     """Safely terminate a process and all its child processes."""
     if sys.platform == "win32":
         try:
-            # First try graceful termination so node.js can flush PGlite WAL and close files
             subprocess.run(
                 ["taskkill", "/T", "/PID", str(pid)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
             )
             time.sleep(1)
-            # Force kill if still lingering
             subprocess.run(
                 ["taskkill", "/F", "/T", "/PID", str(pid)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
             )
         except Exception:
             pass
@@ -223,58 +301,32 @@ def kill_process_tree(pid: int):
         except Exception:
             pass
 
-def init_database(project_dir: Path, npm_cmd: str):
-    """Ensures database schema and seed data are initialized."""
-    log_info("Verifying database readiness and initial seed data...")
-    use_shell = sys.platform == "win32"
-    try:
-        subprocess.run(
-            [npm_cmd, "run", "db:init"],
-            cwd=str(project_dir),
-            shell=use_shell,
-            check=True
-        )
-        log_success("Database schema and demo accounts are ready.")
-    except Exception as e:
-        log_warn(f"Initial database check reported: {e}. Retrying with auto-repair...")
-        try:
-            local_app_data = os.environ.get("LOCALAPPDATA", "")
-            if local_app_data:
-                pid_file = Path(local_app_data) / "coop_service_pgdata" / "postmaster.pid"
-                if pid_file.exists():
-                    try:
-                        pid_file.unlink()
-                    except Exception:
-                        pass
-            subprocess.run(
-                [npm_cmd, "run", "db:init"],
-                cwd=str(project_dir),
-                shell=use_shell,
-                check=True
-            )
-            log_success("Database schema and demo accounts are ready.")
-        except Exception as retry_err:
-            log_warn(f"Database auto-initialization check: {retry_err}")
 
 def main():
     # Enable ANSI colors on Windows terminals
     if sys.platform == "win32":
         os.system("")
 
-    parser = argparse.ArgumentParser(description="Coop Service - Automated Startup Script")
+    parser = argparse.ArgumentParser(description="Shram Setu - Automated Launch Script")
     parser.add_argument("--install", action="store_true", help="Force reinstall dependencies")
     parser.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
-    parser.add_argument("--port", type=int, default=3000, help="Port to run the application on (default: 3000)")
+    parser.add_argument("--port", type=int, default=3000, help="Frontend port (default: 3000)")
+    parser.add_argument("--backend-port", type=int, default=BACKEND_PORT, help="Backend port (default: 8000)")
     args = parser.parse_args()
 
+    global BACKEND_PORT
+    BACKEND_PORT = args.backend_port
+
     project_dir = Path(__file__).resolve().parent
+    backend_dir = project_dir / "backend"
     port = args.port
     app_url = f"http://localhost:{port}"
 
     print(f"\n{Colors.BOLD}{Colors.HEADER}====================================================")
-    print("        COOP SERVICE - AUTOMATED LAUNCHER")
+    print("        SHRAM SETU - AUTOMATED LAUNCHER")
     print(f"===================================================={Colors.RESET}")
-    print(f"{Colors.DIM}Project Root: {project_dir}{Colors.RESET}\n")
+    print(f"{Colors.DIM}Project Root: {project_dir}{Colors.RESET}")
+    print(f"{Colors.DIM}Backend     : FastAPI + MongoDB Atlas{Colors.RESET}\n")
 
     TOTAL_STEPS = 5
 
@@ -285,7 +337,7 @@ def main():
         log_error("Node.js was not found in your PATH.")
         log_error("Please download and install Node.js from: https://nodejs.org/")
         sys.exit(1)
-    
+
     try:
         node_version = subprocess.check_output([node_cmd, "--version"], text=True).strip()
         log_success(f"Node.js detected ({node_version})")
@@ -298,25 +350,61 @@ def main():
         sys.exit(1)
     log_success(f"Package manager detected ({npm_cmd})")
 
+    python_cmd = get_python_command()
+    log_success(f"Python detected ({python_cmd})")
+
     # STEP 2: Configure Environment
-    log_step(2, TOTAL_STEPS, "Configuring Environment (.env)")
+    log_step(2, TOTAL_STEPS, "Configuring Environment (.env files)")
     setup_environment(project_dir)
-    check_postgres()
 
     # STEP 3: Install Dependencies
     log_step(3, TOTAL_STEPS, "Checking & Installing Dependencies")
     install_dependencies(project_dir, npm_cmd, force=args.install)
+    setup_backend(project_dir, force=args.install)
 
-    # STEP 4: Initialize & Seed Database
-    log_step(4, TOTAL_STEPS, "Initializing & Verifying Database")
-    init_database(project_dir, npm_cmd)
+    # STEP 4: Database (backend connects and auto-seeds on startup)
+    log_step(4, TOTAL_STEPS, "Preparing FastAPI Backend (MongoDB)")
+    free_port(BACKEND_PORT)
+    log_info("The backend seeds initial data automatically on startup (idempotent).")
+    log_info("If this is the first run, edit backend/.env and set MONGODB_URI to your")
+    log_info("MongoDB Atlas connection string for persistent storage.")
 
-    # STEP 5: Launch Full-Stack Server
-    log_step(5, TOTAL_STEPS, f"Starting Full-Stack Server on port {port}")
+    if sys.platform == "win32":
+        uvicorn_cmd = str(backend_dir / ".venv" / "Scripts" / "python.exe")
+    else:
+        uvicorn_cmd = str(backend_dir / ".venv" / "bin" / "python")
+    backend_process = subprocess.Popen(
+        [uvicorn_cmd, "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", str(BACKEND_PORT)],
+        cwd=str(backend_dir),
+        shell=False,
+    )
+    log_info(f"FastAPI backend starting on http://localhost:{BACKEND_PORT} (docs at /docs)")
+
+    # Wait for the backend health endpoint before starting the frontend.
+    backend_healthy = False
+    for _ in range(60):
+        if is_port_in_use(BACKEND_PORT):
+            try:
+                with urllib.request.urlopen(
+                    f"http://localhost:{BACKEND_PORT}/api/health", timeout=1.5
+                ) as resp:
+                    if resp.status == 200:
+                        backend_healthy = True
+                        break
+            except Exception:
+                pass
+        time.sleep(0.5)
+    if backend_healthy:
+        log_success("FastAPI backend is healthy (database connected & seeded).")
+    else:
+        log_warn("Backend health check did not pass yet - the frontend will still start.")
+        log_warn("Check the backend logs above and your backend/.env MONGODB_URI setting.")
+
+    # STEP 5: Launch frontend server
+    log_step(5, TOTAL_STEPS, f"Starting Next.js Frontend on port {port}")
     free_port(port)
-    log_info("Both Backend (API routes) and Frontend (UI pages) are running together via Next.js.")
     log_info(f"Target URL: {Colors.BOLD}{app_url}{Colors.RESET}")
-    log_info("Press Ctrl+C at any time to gracefully shut down the server.\n")
+    log_info("Press Ctrl+C at any time to gracefully shut down both servers.\n")
 
     stop_event = threading.Event()
     browser_thread = None
@@ -329,7 +417,6 @@ def main():
         )
         browser_thread.start()
 
-    # Configure dev server command
     server_env = os.environ.copy()
     server_env["PORT"] = str(port)
 
@@ -349,18 +436,27 @@ def main():
 
     except KeyboardInterrupt:
         print("\n")
-        log_info("Shutdown signal (Ctrl+C) received. Stopping server...")
+        log_info("Shutdown signal (Ctrl+C) received. Stopping servers...")
     finally:
         stop_event.set()
         if dev_process and dev_process.poll() is None:
-            log_info("Terminating server process tree...")
+            log_info("Terminating frontend process tree...")
             kill_process_tree(dev_process.pid)
             try:
                 dev_process.terminate()
                 dev_process.wait(timeout=3)
             except Exception:
                 dev_process.kill()
+        if backend_process and backend_process.poll() is None:
+            log_info("Terminating backend process...")
+            kill_process_tree(backend_process.pid)
+            try:
+                backend_process.terminate()
+                backend_process.wait(timeout=3)
+            except Exception:
+                backend_process.kill()
         log_success("Application shut down cleanly. Goodbye!")
+
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ import { Search, CheckCircle, XCircle, Clock, Star, Filter } from "lucide-react"
 import { StatusBadge } from "@/components/StatusBadge";
 import { StarRating } from "@/components/StarRating";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 interface ProviderData {
   provider: {
@@ -40,7 +41,7 @@ export default function AdminProvidersPage() {
   const [verifyNotes, setVerifyNotes] = useState("");
 
   const fetchProviders = () => {
-    fetch("/api/admin/providers")
+    apiFetch("/api/admin/providers")
       .then((r) => r.json())
       .then((d) => setProviders((d as { providers: ProviderData[] }).providers ?? []))
       .finally(() => setLoading(false));
@@ -51,7 +52,7 @@ export default function AdminProvidersPage() {
   const handleVerify = async (providerId: string, status: string, notes: string) => {
     setVerifyingId(providerId);
     try {
-      await fetch(`/api/admin/providers/${providerId}/verify`, {
+      await apiFetch(`/api/admin/providers/${providerId}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, notes }),

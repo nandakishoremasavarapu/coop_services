@@ -6,6 +6,7 @@ import SahakariEmblem from "@/components/SahakariEmblem";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StarRating } from "@/components/StarRating";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 interface BookingData {
   booking: {
@@ -135,7 +136,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const fetchData = async () => {
     try {
-      const res = await fetch(`/api/bookings/${id}`);
+      const res = await apiFetch(`/api/bookings/${id}`);
       const d = await res.json();
       setData(d as BookingData);
     } catch (e) {
@@ -152,7 +153,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const performAction = async (action: string, extra: Record<string, unknown> = {}) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/bookings/${id}`, {
+      const res = await apiFetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...extra }),

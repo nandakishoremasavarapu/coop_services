@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
+import { apiFetch } from "@/lib/api";
 
 const navItems = [
   { href: "/provider", icon: "dashboard", label: "Dashboard" },
@@ -20,7 +21,7 @@ export default function ProviderNav() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await apiFetch("/api/auth/logout", { method: "POST" });
       router.push("/");
     } catch (err) {
       console.error("Logout error:", err);

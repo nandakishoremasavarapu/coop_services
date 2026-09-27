@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 const STATUS_GROUPS = {
   active: [
@@ -45,7 +46,7 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState<Tab>("active");
 
   useEffect(() => {
-    fetch("/api/bookings?role=customer")
+    apiFetch("/api/bookings?role=customer")
       .then((r) => r.json())
       .then((d) => setBookings(d.bookings ?? []))
       .finally(() => setLoading(false));

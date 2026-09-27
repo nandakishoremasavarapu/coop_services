@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState, useEffect } from "react";
 import {
   Settings,
@@ -122,8 +123,8 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/admin/settings").then((r) => r.json()).catch(() => ({})),
-      fetch("/api/services/categories").then((r) => r.json()).catch(() => ({ categories: [] })),
+      apiFetch("/api/admin/settings").then((r) => r.json()).catch(() => ({})),
+      apiFetch("/api/services/categories").then((r) => r.json()).catch(() => ({ categories: [] })),
     ])
       .then(([settingsData, catData]) => {
         if (settingsData?.settings) {
@@ -149,7 +150,7 @@ export default function AdminSettingsPage() {
   const handleSaveSettings = async (partialData: Record<string, any>, successLabel = "Settings saved successfully") => {
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/settings", {
+      const res = await apiFetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(partialData),
