@@ -1,39 +1,28 @@
 "use client";
 
+import React from "react";
+import { Spinner, LoadingBlock } from "@/components/ui/states";
+
 interface LoadingSpinnerProps {
   size?: number;
   color?: string;
   label?: string;
 }
 
-export function LoadingSpinner({ size = 24, color = "#1a56db", label }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = 28, label }: LoadingSpinnerProps) {
+  if (label) return <LoadingBlock label={label} />;
   return (
-    <div className="flex flex-col items-center gap-3">
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="animate-spin"
-      >
-        <circle cx="12" cy="12" r="10" stroke="#e2e8f0" strokeWidth="3" />
-        <path
-          d="M12 2a10 10 0 0 1 10 10"
-          stroke={color}
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-      </svg>
-      {label && <p className="text-sm text-slate-500 font-medium">{label}</p>}
+    <div className="flex items-center justify-center p-6" role="status">
+      <Spinner size={size} />
     </div>
   );
 }
 
-export function PageLoader({ label = "Loading..." }: { label?: string }) {
+export function PageLoader({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <LoadingSpinner size={40} label={label} />
+    <div className="min-h-dvh flex items-center justify-center">
+      <Spinner size={34} />
+      <span className="sr-only">{label}</span>
     </div>
   );
 }

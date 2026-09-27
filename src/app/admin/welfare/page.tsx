@@ -142,7 +142,8 @@ export default function AdminWelfarePage() {
   };
 
   useEffect(() => {
-    fetchWelfareData();
+    const t = setTimeout(() => void fetchWelfareData(), 0);
+    return () => clearTimeout(t);
   }, []);
 
   const handleApproveClaim = async (claimId: string) => {
@@ -270,17 +271,17 @@ export default function AdminWelfarePage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-ink-200">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
               <Shield size={12} className="text-emerald-600" />
               Sahakari Mutual Security
             </span>
-            <span className="text-xs text-slate-400 font-medium">Kerala Labour Federation Chapter</span>
+            <span className="text-xs text-ink-400 font-medium">Kerala Labour Federation Chapter</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Welfare & Insurance Administration</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-ink-900">Welfare & Insurance Administration</h1>
+          <p className="text-ink-500 text-sm mt-0.5">
             Comprehensive member-owner health cover, emergency mutual aid, and retirement dividend oversight
           </p>
         </div>
@@ -296,7 +297,7 @@ export default function AdminWelfarePage() {
           </button>
           <button
             onClick={() => setShowNewClaimModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
+            className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
           >
             <Plus size={15} />
             <span>File New Claim</span>
@@ -321,45 +322,45 @@ export default function AdminWelfarePage() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-            <CheckCircle2 size={14} className="text-blue-600" /> Claims Disbursed (FY26)
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-ink-200">
+          <div className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <CheckCircle2 size={14} className="text-brand-600" /> Claims Disbursed (FY26)
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <div className="text-3xl font-extrabold text-ink-900 tracking-tight">
             ₹{stats.totalClaimsPaid.toLocaleString("en-IN")}
           </div>
-          <div className="text-xs text-slate-500 mt-2">
-            <strong className="text-blue-600 font-semibold">{claims.filter((c) => c.status === "disbursed").length} claims</strong> settled without paperwork delay
+          <div className="text-xs text-ink-500 mt-2">
+            <strong className="text-brand-600 font-semibold">{claims.filter((c) => c.status === "disbursed").length} claims</strong> settled without paperwork delay
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-ink-200">
+          <div className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
             <Users size={14} className="text-indigo-600" /> Active Insured Members
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <div className="text-3xl font-extrabold text-ink-900 tracking-tight">
             {stats.activeCoveredMembers}
           </div>
-          <div className="text-xs text-slate-500 mt-2">
+          <div className="text-xs text-ink-500 mt-2">
             <span className="text-emerald-600 font-semibold">100% active technicians</span> covered under group policies
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-ink-200">
+          <div className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
             <Zap size={14} className="text-amber-500" /> Emergency Mutual Aid Pool
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <div className="text-3xl font-extrabold text-ink-900 tracking-tight">
             ₹{stats.emergencyReserve.toLocaleString("en-IN")}
           </div>
-          <div className="text-xs text-slate-500 mt-2">
+          <div className="text-xs text-ink-500 mt-2">
             Disbursed instantly for accidents & tool losses
           </div>
         </div>
       </div>
 
       {/* Main Tab Navigation */}
-      <div className="flex border-b border-slate-200 bg-white px-4 pt-2 rounded-t-2xl shadow-sm">
+      <div className="flex border-b border-ink-200 bg-white px-4 pt-2 rounded-t-2xl shadow-sm">
         {[
           { id: "schemes" as TabType, label: "Insurance & Welfare Schemes", icon: Shield, count: schemes.length },
           { id: "claims" as TabType, label: "Live Claims & Disbursals", icon: FileText, count: claims.filter((c) => c.status === "pending").length, badgeColor: "bg-amber-100 text-amber-800" },
@@ -374,8 +375,8 @@ export default function AdminWelfarePage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 py-3 px-4 text-xs font-bold border-b-2 transition-all relative ${
                 isActive
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"
+                  ? "border-brand-600 text-brand-600"
+                  : "border-transparent text-ink-500 hover:text-ink-900 hover:border-ink-300"
               }`}
             >
               <Icon size={16} />
@@ -383,7 +384,7 @@ export default function AdminWelfarePage() {
               {tab.count !== undefined && (
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                    tab.badgeColor || (isActive ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600")
+                    tab.badgeColor || (isActive ? "bg-brand-100 text-brand-700" : "bg-ink-100 text-ink-600")
                   }`}
                 >
                   {tab.count}
@@ -403,31 +404,31 @@ export default function AdminWelfarePage() {
             {schemes.map((scheme) => (
               <div
                 key={scheme.id}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all flex flex-col justify-between"
+                className="bg-white rounded-2xl p-5 shadow-sm border border-ink-200 hover:border-brand-400 hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg">
+                    <span className="text-[11px] font-bold bg-brand-50 text-brand-700 px-2.5 py-1 rounded-lg">
                       {scheme.type}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono font-medium">{scheme.code}</span>
+                    <span className="text-[10px] text-ink-400 font-mono font-medium">{scheme.code}</span>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900 mb-1 leading-snug">{scheme.name}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 mb-4">{scheme.description}</p>
+                  <h3 className="text-base font-bold text-ink-900 mb-1 leading-snug">{scheme.name}</h3>
+                  <p className="text-xs text-ink-500 line-clamp-2 mb-4">{scheme.description}</p>
 
-                  <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 mb-4 border border-slate-100 text-xs">
+                  <div className="bg-ink-50 rounded-xl p-3 space-y-1.5 mb-4 border border-ink-100 text-xs">
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Max Benefit:</span>
+                      <span className="text-ink-500">Max Benefit:</span>
                       <span className="font-extrabold text-emerald-700 text-sm">{scheme.coverageAmount}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Monthly Cost:</span>
-                      <span className="font-medium text-slate-700">{scheme.monthlyDeduction}</span>
+                      <span className="text-ink-500">Monthly Cost:</span>
+                      <span className="font-medium text-ink-700">{scheme.monthlyDeduction}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Underwritten by:</span>
-                      <span className="font-semibold text-slate-800 text-[11px] truncate max-w-[170px]">
+                      <span className="text-ink-500">Underwritten by:</span>
+                      <span className="font-semibold text-ink-800 text-[11px] truncate max-w-[170px]">
                         {scheme.insurer}
                       </span>
                     </div>
@@ -435,7 +436,7 @@ export default function AdminWelfarePage() {
 
                   <div className="space-y-1.5 mb-4">
                     {scheme.features.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-slate-600">
+                      <div key={i} className="flex items-start gap-2 text-xs text-ink-600">
                         <Check size={14} className="text-emerald-600 flex-shrink-0 mt-0.5" />
                         <span className="leading-tight">{feat}</span>
                       </div>
@@ -443,13 +444,13 @@ export default function AdminWelfarePage() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-medium">
-                    <strong className="text-slate-700">{scheme.beneficiaries}</strong> Members Covered
+                <div className="pt-3 border-t border-ink-100 flex items-center justify-between">
+                  <span className="text-xs text-ink-400 font-medium">
+                    <strong className="text-ink-700">{scheme.beneficiaries}</strong> Members Covered
                   </span>
                   <button
                     onClick={() => setSelectedScheme(scheme)}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-blue-50 transition-colors"
+                    className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-brand-50 transition-colors"
                   >
                     <span>View Policy Details</span>
                     <ArrowRight size={13} />
@@ -465,22 +466,22 @@ export default function AdminWelfarePage() {
       {/* TAB 2: LIVE CLAIMS & DISBURSALS */}
       {/* ========================================================================= */}
       {activeTab === "claims" && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-ink-200 overflow-hidden">
           {/* Filters Bar */}
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50">
+          <div className="p-4 border-b border-ink-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-ink-50">
             <div className="relative w-full sm:w-72">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
                 type="text"
                 placeholder="Search claims by ID, member, scheme..."
                 value={claimSearch}
                 onChange={(e) => setClaimSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-ink-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
             <div className="flex items-center gap-2 self-stretch sm:self-auto">
-              <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
+              <span className="text-xs text-ink-500 font-semibold flex items-center gap-1">
                 <Filter size={13} /> Status:
               </span>
               {["all", "pending", "approved", "disbursed", "rejected"].map((status) => (
@@ -489,8 +490,8 @@ export default function AdminWelfarePage() {
                   onClick={() => setClaimStatusFilter(status)}
                   className={`text-xs px-3 py-1.5 rounded-xl font-semibold capitalize transition-all ${
                     claimStatusFilter === status
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-white text-slate-600 hover:bg-slate-200 border border-slate-200"
+                      ? "bg-brand-600 text-white shadow-sm"
+                      : "bg-white text-ink-600 hover:bg-ink-200 border border-ink-200"
                   }`}
                 >
                   {status}
@@ -503,7 +504,7 @@ export default function AdminWelfarePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-100/60 text-slate-600 font-bold uppercase tracking-wider">
+                <tr className="border-b border-ink-200 bg-ink-100/60 text-ink-600 font-bold uppercase tracking-wider">
                   <th className="px-5 py-3">Claim ID</th>
                   <th className="px-5 py-3">Member & Trade</th>
                   <th className="px-5 py-3">Welfare Scheme</th>
@@ -513,24 +514,24 @@ export default function AdminWelfarePage() {
                   <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {filteredClaims.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-10 text-slate-400 text-sm">
+                    <td colSpan={7} className="text-center py-10 text-ink-400 text-sm">
                       No claims found matching filter criteria.
                     </td>
                   </tr>
                 ) : (
                   filteredClaims.map((claim) => (
-                    <tr key={claim.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3.5 font-mono font-bold text-slate-900">{claim.id}</td>
+                    <tr key={claim.id} className="hover:bg-ink-50 transition-colors">
+                      <td className="px-5 py-3.5 font-mono font-bold text-ink-900">{claim.id}</td>
                       <td className="px-5 py-3.5">
-                        <div className="font-bold text-slate-900">{claim.providerName}</div>
-                        <div className="text-slate-400 text-[11px]">{claim.trade}</div>
+                        <div className="font-bold text-ink-900">{claim.providerName}</div>
+                        <div className="text-ink-400 text-[11px]">{claim.trade}</div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="font-semibold text-slate-800">{claim.schemeName}</div>
-                        <div className="text-slate-400 text-[11px]">{claim.claimType}</div>
+                        <div className="font-semibold text-ink-800">{claim.schemeName}</div>
+                        <div className="text-ink-400 text-[11px]">{claim.claimType}</div>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className="font-bold text-emerald-700 text-sm">
@@ -538,8 +539,8 @@ export default function AdminWelfarePage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 max-w-xs">
-                        <div className="text-slate-700 font-medium truncate">{claim.hospital}</div>
-                        <div className="text-slate-400 text-[11px] truncate">{claim.diagnosis}</div>
+                        <div className="text-ink-700 font-medium truncate">{claim.hospital}</div>
+                        <div className="text-ink-400 text-[11px] truncate">{claim.diagnosis}</div>
                       </td>
                       <td className="px-5 py-3.5">
                         <span
@@ -547,7 +548,7 @@ export default function AdminWelfarePage() {
                             claim.status === "disbursed"
                               ? "bg-green-100 text-green-700"
                               : claim.status === "approved"
-                              ? "bg-blue-100 text-blue-700"
+                              ? "bg-brand-100 text-brand-700"
                               : claim.status === "pending"
                               ? "bg-amber-100 text-amber-800 animate-pulse"
                               : "bg-red-100 text-red-700"
@@ -559,7 +560,7 @@ export default function AdminWelfarePage() {
                       <td className="px-5 py-3.5 text-right">
                         <button
                           onClick={() => setSelectedClaim(claim)}
-                          className="bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-xl border border-slate-200 transition-colors"
+                          className="bg-ink-100 hover:bg-brand-50 text-ink-700 hover:text-brand-700 font-semibold px-3 py-1.5 rounded-xl border border-ink-200 transition-colors"
                         >
                           View & Process
                         </button>
@@ -577,27 +578,27 @@ export default function AdminWelfarePage() {
       {/* TAB 3: MEMBER WELFARE LEDGER */}
       {/* ========================================================================= */}
       {activeTab === "members" && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50">
+        <div className="bg-white rounded-2xl shadow-sm border border-ink-200 overflow-hidden">
+          <div className="p-4 border-b border-ink-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-ink-50">
             <div className="relative w-full sm:w-80">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
                 type="text"
                 placeholder="Search member passbook by name, union ID or trade..."
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-ink-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
-            <div className="text-xs text-slate-500 font-medium">
-              Showing <strong className="text-slate-800">{filteredMembers.length}</strong> active member passbooks
+            <div className="text-xs text-ink-500 font-medium">
+              Showing <strong className="text-ink-800">{filteredMembers.length}</strong> active member passbooks
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-100/60 text-slate-600 font-bold uppercase tracking-wider">
+                <tr className="border-b border-ink-200 bg-ink-100/60 text-ink-600 font-bold uppercase tracking-wider">
                   <th className="px-5 py-3">Member-Owner</th>
                   <th className="px-5 py-3">Union Reg. Card</th>
                   <th className="px-5 py-3">Cooperative Society</th>
@@ -607,16 +608,16 @@ export default function AdminWelfarePage() {
                   <th className="px-5 py-3 text-right">Passbook Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {filteredMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={member.id} className="hover:bg-ink-50 transition-colors">
                     <td className="px-5 py-3.5">
-                      <div className="font-bold text-slate-900">{member.name}</div>
-                      <div className="text-slate-400 text-[11px]">{member.trade}</div>
+                      <div className="font-bold text-ink-900">{member.name}</div>
+                      <div className="text-ink-400 text-[11px]">{member.trade}</div>
                     </td>
-                    <td className="px-5 py-3.5 font-mono font-semibold text-blue-700">{member.unionId}</td>
-                    <td className="px-5 py-3.5 text-slate-700 font-medium">{member.society}</td>
-                    <td className="px-5 py-3.5 font-mono text-slate-600">{member.policyNumber}</td>
+                    <td className="px-5 py-3.5 font-mono font-semibold text-brand-700">{member.unionId}</td>
+                    <td className="px-5 py-3.5 text-ink-700 font-medium">{member.society}</td>
+                    <td className="px-5 py-3.5 font-mono text-ink-600">{member.policyNumber}</td>
                     <td className="px-5 py-3.5">
                       <span className="font-bold text-emerald-700">₹{member.welfareContributed.toLocaleString("en-IN")}</span>
                     </td>
@@ -628,7 +629,7 @@ export default function AdminWelfarePage() {
                     <td className="px-5 py-3.5 text-right">
                       <button
                         onClick={() => showToast(`Downloaded Sahakari Welfare Certificate for ${member.name}`)}
-                        className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1.5 ml-auto text-xs"
+                        className="text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1.5 ml-auto text-xs"
                       >
                         <Download size={13} />
                         <span>Policy Card</span>
@@ -659,7 +660,7 @@ export default function AdminWelfarePage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowReliefModal(true)}
-                  className="bg-white text-slate-900 font-bold text-xs px-5 py-2.5 rounded-xl shadow-md hover:bg-amber-50 transition-colors"
+                  className="bg-white text-ink-900 font-bold text-xs px-5 py-2.5 rounded-xl shadow-md hover:bg-amber-50 transition-colors"
                 >
                   Dispatch Emergency Relief Grant
                 </button>
@@ -669,30 +670,30 @@ export default function AdminWelfarePage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-slate-900">Cooperative Mutual Aid Principles</h3>
+            <div className="bg-white rounded-2xl p-5 border border-ink-200 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-ink-900">Cooperative Mutual Aid Principles</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="font-bold text-slate-800 mb-1">⚡ 2-Hour SLA Disbursement</div>
-                  <p className="text-slate-500 leading-relaxed">
-                    Emergency funds are directly transferred to the member's registered UPI ID within 120 minutes of Society Steward confirmation.
+                <div className="p-3 bg-ink-50 rounded-xl border border-ink-100">
+                  <div className="font-bold text-ink-800 mb-1">⚡ 2-Hour SLA Disbursement</div>
+                  <p className="text-ink-500 leading-relaxed">
+                    Emergency funds are directly transferred to the member&rsquo;s registered UPI ID within 120 minutes of Society Steward confirmation.
                   </p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="font-bold text-slate-800 mb-1">🤝 No Repayment Burden</div>
-                  <p className="text-slate-500 leading-relaxed">
+                <div className="p-3 bg-ink-50 rounded-xl border border-ink-100">
+                  <div className="font-bold text-ink-800 mb-1">🤝 No Repayment Burden</div>
+                  <p className="text-ink-500 leading-relaxed">
                     Distress grants are non-repayable grants funded collectively from the 3% platform welfare fee pool.
                   </p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="font-bold text-slate-800 mb-1">🏥 Cashless Hospitalization Guarantee</div>
-                  <p className="text-slate-500 leading-relaxed">
+                <div className="p-3 bg-ink-50 rounded-xl border border-ink-100">
+                  <div className="font-bold text-ink-800 mb-1">🏥 Cashless Hospitalization Guarantee</div>
+                  <p className="text-ink-500 leading-relaxed">
                     Federation stewards issue immediate guarantee letters to empanelled hospitals to admit injured members without advance deposits.
                   </p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="font-bold text-slate-800 mb-1">🛠️ Tool Depot Replacement</div>
-                  <p className="text-slate-500 leading-relaxed">
+                <div className="p-3 bg-ink-50 rounded-xl border border-ink-100">
+                  <div className="font-bold text-ink-800 mb-1">🛠️ Tool Depot Replacement</div>
+                  <p className="text-ink-500 leading-relaxed">
                     Damaged equipment can be immediately picked up from the district cooperative depot to prevent daily wage loss.
                   </p>
                 </div>
@@ -700,30 +701,30 @@ export default function AdminWelfarePage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white rounded-2xl p-5 border border-ink-200 shadow-sm flex flex-col justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                <Clock size={16} className="text-blue-600" /> Recent Mutual Aid Grants
+              <h3 className="text-sm font-bold text-ink-900 mb-3 flex items-center gap-2">
+                <Clock size={16} className="text-brand-600" /> Recent Mutual Aid Grants
               </h3>
               <div className="space-y-3">
                 {claims
                   .filter((c) => c.status === "disbursed")
                   .slice(0, 3)
                   .map((c) => (
-                    <div key={c.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
-                      <div className="flex justify-between items-center font-bold text-slate-900 mb-1">
+                    <div key={c.id} className="p-3 bg-ink-50 rounded-xl border border-ink-100 text-xs">
+                      <div className="flex justify-between items-center font-bold text-ink-900 mb-1">
                         <span>{c.providerName}</span>
                         <span className="text-emerald-700">₹{c.amount.toLocaleString("en-IN")}</span>
                       </div>
-                      <div className="text-slate-500 text-[11px] mb-1">{c.claimType} • {c.hospital}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Disbursed on {c.dateSubmitted}</div>
+                      <div className="text-ink-500 text-[11px] mb-1">{c.claimType} • {c.hospital}</div>
+                      <div className="text-[10px] text-ink-400 font-mono">Disbursed on {c.dateSubmitted}</div>
                     </div>
                   ))}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 mt-4 text-center">
-              <span className="text-[11px] text-slate-400">Audited by Kerala Cooperative Audit Wing</span>
+            <div className="pt-4 border-t border-ink-100 mt-4 text-center">
+              <span className="text-[11px] text-ink-400">Audited by Kerala Cooperative Audit Wing</span>
             </div>
           </div>
         </div>
@@ -733,54 +734,54 @@ export default function AdminWelfarePage() {
       {/* MODAL 1: SCHEME POLICY DETAILS */}
       {/* ========================================================================= */}
       {selectedScheme && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
                   <Shield size={20} />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">{selectedScheme.name}</h2>
-                  <span className="text-xs text-blue-600 font-mono font-medium">{selectedScheme.code}</span>
+                  <h2 className="text-base font-bold text-ink-900">{selectedScheme.name}</h2>
+                  <span className="text-xs text-brand-600 font-mono font-medium">{selectedScheme.code}</span>
                 </div>
               </div>
-              <button onClick={() => setSelectedScheme(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setSelectedScheme(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs text-slate-600">
-              <p className="text-sm leading-relaxed text-slate-700">{selectedScheme.description}</p>
+            <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs text-ink-600">
+              <p className="text-sm leading-relaxed text-ink-700">{selectedScheme.description}</p>
 
-              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-ink-50 rounded-2xl border border-ink-100">
                 <div>
-                  <div className="text-slate-400 font-medium">Coverage Limit</div>
+                  <div className="text-ink-400 font-medium">Coverage Limit</div>
                   <div className="text-base font-extrabold text-emerald-700 mt-0.5">{selectedScheme.coverageAmount}</div>
                 </div>
                 <div>
-                  <div className="text-slate-400 font-medium">Underwriter</div>
-                  <div className="font-bold text-slate-800 mt-0.5">{selectedScheme.insurer}</div>
+                  <div className="text-ink-400 font-medium">Underwriter</div>
+                  <div className="font-bold text-ink-800 mt-0.5">{selectedScheme.insurer}</div>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-900 text-xs mb-2">Key Policy Terms & Entitlements</h4>
+                <h4 className="font-bold text-ink-900 text-xs mb-2">Key Policy Terms & Entitlements</h4>
                 <div className="space-y-2">
                   {selectedScheme.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2 bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/60">
                       <CheckCircle2 size={15} className="text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-slate-700 leading-tight">{f}</span>
+                      <span className="text-ink-700 leading-tight">{f}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex justify-end">
               <button
                 onClick={() => setSelectedScheme(null)}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-xl text-xs"
+                className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2 rounded-xl text-xs"
               >
                 Close Policy
               </button>
@@ -793,60 +794,60 @@ export default function AdminWelfarePage() {
       {/* MODAL 2: CLAIM DETAILS & DISBURSAL DESK */}
       {/* ========================================================================= */}
       {selectedClaim && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div>
-                <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-mono font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">
                   {selectedClaim.id}
                 </span>
-                <h2 className="text-base font-bold text-slate-900 mt-1">Claim Settlement & Audit Review</h2>
+                <h2 className="text-base font-bold text-ink-900 mt-1">Claim Settlement & Audit Review</h2>
               </div>
-              <button onClick={() => setSelectedClaim(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setSelectedClaim(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="p-4 rounded-2xl bg-ink-50 border border-ink-200 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Beneficiary:</span>
-                  <strong className="text-slate-900">{selectedClaim.providerName} ({selectedClaim.trade})</strong>
+                  <span className="text-ink-500">Beneficiary:</span>
+                  <strong className="text-ink-900">{selectedClaim.providerName} ({selectedClaim.trade})</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Welfare Scheme:</span>
-                  <strong className="text-slate-900">{selectedClaim.schemeName}</strong>
+                  <span className="text-ink-500">Welfare Scheme:</span>
+                  <strong className="text-ink-900">{selectedClaim.schemeName}</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Incident Date:</span>
-                  <span className="text-slate-700 font-mono">{selectedClaim.incidentDate}</span>
+                  <span className="text-ink-500">Incident Date:</span>
+                  <span className="text-ink-700 font-mono">{selectedClaim.incidentDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Hospital / Facility:</span>
-                  <span className="text-slate-800 font-semibold">{selectedClaim.hospital}</span>
+                  <span className="text-ink-500">Hospital / Facility:</span>
+                  <span className="text-ink-800 font-semibold">{selectedClaim.hospital}</span>
                 </div>
-                <div className="flex justify-between pt-2 border-t border-slate-200">
-                  <span className="text-slate-600 font-bold">Approved Claim Amount:</span>
+                <div className="flex justify-between pt-2 border-t border-ink-200">
+                  <span className="text-ink-600 font-bold">Approved Claim Amount:</span>
                   <span className="text-base font-extrabold text-emerald-700">₹{selectedClaim.amount.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Medical Diagnosis / Incident Record</label>
-                <div className="p-3 bg-white border border-slate-200 rounded-xl text-slate-600 leading-relaxed">
+                <label className="font-bold text-ink-700 block mb-1">Medical Diagnosis / Incident Record</label>
+                <div className="p-3 bg-white border border-ink-200 rounded-xl text-ink-600 leading-relaxed">
                   {selectedClaim.diagnosis}
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Disbursement Account & Routing</label>
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 font-medium">
+                <label className="font-bold text-ink-700 block mb-1">Disbursement Account & Routing</label>
+                <div className="p-3 bg-brand-50 border border-brand-200 rounded-xl text-brand-900 font-medium">
                   {selectedClaim.payoutMethod}
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex items-center justify-between">
               {selectedClaim.status === "pending" ? (
                 <>
                   <button
@@ -865,12 +866,12 @@ export default function AdminWelfarePage() {
                 </>
               ) : (
                 <div className="w-full flex justify-between items-center">
-                  <span className="text-xs text-slate-500 font-semibold">
+                  <span className="text-xs text-ink-500 font-semibold">
                     Status: <strong className="text-emerald-700 capitalize">{selectedClaim.status}</strong>
                   </span>
                   <button
                     onClick={() => setSelectedClaim(null)}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-5 py-2 rounded-xl text-xs"
+                    className="bg-ink-200 hover:bg-ink-300 text-ink-800 font-semibold px-5 py-2 rounded-xl text-xs"
                   >
                     Close
                   </button>
@@ -885,26 +886,26 @@ export default function AdminWelfarePage() {
       {/* MODAL 3: REGISTER NEW CLAIM */}
       {/* ========================================================================= */}
       {showNewClaimModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
                   <Plus size={20} />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">File Member Welfare Claim</h2>
-                  <p className="text-xs text-slate-400">Queue medical or tool replacement claim for verification</p>
+                  <h2 className="text-base font-bold text-ink-900">File Member Welfare Claim</h2>
+                  <p className="text-xs text-ink-400">Queue medical or tool replacement claim for verification</p>
                 </div>
               </div>
-              <button onClick={() => setShowNewClaimModal(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setShowNewClaimModal(false)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmitNewClaim} className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Beneficiary Member-Owner</label>
+                <label className="font-semibold text-ink-700 block mb-1">Beneficiary Member-Owner</label>
                 <select
                   value={newClaimMember}
                   onChange={(e) => setNewClaimMember(e.target.value)}
@@ -919,7 +920,7 @@ export default function AdminWelfarePage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Applicable Welfare Scheme</label>
+                <label className="font-semibold text-ink-700 block mb-1">Applicable Welfare Scheme</label>
                 <select
                   value={newClaimScheme}
                   onChange={(e) => setNewClaimScheme(e.target.value)}
@@ -934,7 +935,7 @@ export default function AdminWelfarePage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Claim Amount (₹)</label>
+                <label className="font-semibold text-ink-700 block mb-1">Claim Amount (₹)</label>
                 <input
                   type="number"
                   value={newClaimAmount}
@@ -945,7 +946,7 @@ export default function AdminWelfarePage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Hospital / Depot Inspection Facility</label>
+                <label className="font-semibold text-ink-700 block mb-1">Hospital / Depot Inspection Facility</label>
                 <input
                   type="text"
                   value={newClaimHospital}
@@ -956,7 +957,7 @@ export default function AdminWelfarePage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Incident Description & Treatment Notes</label>
+                <label className="font-semibold text-ink-700 block mb-1">Incident Description & Treatment Notes</label>
                 <textarea
                   rows={3}
                   value={newClaimDiagnosis}
@@ -967,17 +968,17 @@ export default function AdminWelfarePage() {
                 />
               </div>
 
-              <div className="p-4 border-t border-slate-100 flex justify-end gap-3 pt-3">
+              <div className="p-4 border-t border-ink-100 flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowNewClaimModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold"
+                  className="px-4 py-2 rounded-xl text-ink-600 hover:bg-ink-100 font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-xl shadow-sm"
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2 rounded-xl shadow-sm"
                 >
                   Submit for Approval
                 </button>
@@ -991,26 +992,26 @@ export default function AdminWelfarePage() {
       {/* MODAL 4: INSTANT EMERGENCY DISTRESS RELIEF */}
       {/* ========================================================================= */}
       {showReliefModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-amber-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-amber-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center">
                   <Zap size={20} className="fill-white" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">Instant Mutual Aid Distress Relief</h2>
+                  <h2 className="text-base font-bold text-ink-900">Instant Mutual Aid Distress Relief</h2>
                   <p className="text-xs text-amber-800">Zero-paperwork direct emergency grant</p>
                 </div>
               </div>
-              <button onClick={() => setShowReliefModal(false)} className="p-2 hover:bg-amber-100 rounded-full text-slate-500">
+              <button onClick={() => setShowReliefModal(false)} className="p-2 hover:bg-amber-100 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleDispatchRelief} className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Technician in Distress</label>
+                <label className="font-semibold text-ink-700 block mb-1">Technician in Distress</label>
                 <select
                   value={reliefMember}
                   onChange={(e) => setReliefMember(e.target.value)}
@@ -1025,7 +1026,7 @@ export default function AdminWelfarePage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Distress Relief Amount</label>
+                <label className="font-semibold text-ink-700 block mb-1">Distress Relief Amount</label>
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {[2000, 5000, 10000].map((amt) => (
                     <button
@@ -1035,7 +1036,7 @@ export default function AdminWelfarePage() {
                       className={`py-2 rounded-xl font-bold border transition-all ${
                         reliefAmount === amt
                           ? "bg-amber-500 text-white border-amber-500 shadow-sm"
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                          : "bg-white text-ink-700 border-ink-200 hover:bg-ink-50"
                       }`}
                     >
                       ₹{amt.toLocaleString("en-IN")}
@@ -1045,7 +1046,7 @@ export default function AdminWelfarePage() {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Emergency Circumstance / Reason</label>
+                <label className="font-semibold text-ink-700 block mb-1">Emergency Circumstance / Reason</label>
                 <textarea
                   rows={3}
                   value={reliefReason}
@@ -1056,14 +1057,14 @@ export default function AdminWelfarePage() {
               </div>
 
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
-                ⚡ Funds are disbursed immediately from the liquid ₹1,20,000 mutual aid reserve directly to the member's registered cooperative bank UPI ID.
+                ⚡ Funds are disbursed immediately from the liquid ₹1,20,000 mutual aid reserve directly to the member&rsquo;s registered cooperative bank UPI ID.
               </div>
 
-              <div className="p-4 border-t border-slate-100 flex justify-end gap-3 pt-3">
+              <div className="p-4 border-t border-ink-100 flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowReliefModal(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold"
+                  className="px-4 py-2 rounded-xl text-ink-600 hover:bg-ink-100 font-semibold"
                 >
                   Cancel
                 </button>

@@ -1,13 +1,39 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import SahakariEmblem from "@/components/SahakariEmblem";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-import CustomerNav from "@/app/customer/CustomerNav";
+import {
+  BadgeCheck,
+  ChevronRight,
+  Handshake,
+  Headset,
+  Languages,
+  LockKeyhole,
+  LogOut,
+  MapPin,
+  MessageCircleQuestion,
+  Phone,
+  UserRound,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/cn";
+import { PageContainer } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
+import { LoadingBlock, Toast } from "@/components/ui/states";
+import { Modal, ConfirmDialog } from "@/components/ui/modal";
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Field, Input, Textarea, Switch } from "@/components/ui/form";
+import { Brand } from "@/components/shells/brand";
 
-type ActiveCustomerModal = "details" | "notifications" | "privacy" | "language" | "support" | null;
+type SettingsId = "details" | "notifications" | "privacy" | "language" | "support" | null;
+
+const LANGUAGES = [
+  { id: "English", native: "English", hint: "Standard English interface" },
+  { id: "Telugu", native: "తెలుగు (Telugu)", hint: "ఆంధ్రప్రదేశ్ మరియు తెలంగాణ ప్రాంతీయ భాష" },
+  { id: "Hindi", native: "हिन्दी (Hindi)", hint: "राष्ट्रीय भाषा इंटरफ़ेस" },
+];
 
 export default function CustomerProfilePage() {
   const router = useRouter();
@@ -17,9 +43,10 @@ export default function CustomerProfilePage() {
     email?: string | null;
     profile?: { address?: string | null; city?: string | null; pincode?: string | null } | null;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeModal, setActiveModal] = useState<ActiveCustomerModal>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [activeModal, setActiveModal] = useState<SettingsId>(null);
   const [toastMsg, setToastMsg] = useState("");
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   // Details state
   const [fullName, setFullName] = useState("");
@@ -27,15 +54,15 @@ export default function CustomerProfilePage() {
   const [city, setCity] = useState("Visakhapatnam");
   const [pincode, setPincode] = useState("530026");
 
-  // Notifications state
+  // Notification prefs
   const [notifService, setNotifService] = useState(true);
   const [notifQuotes, setNotifQuotes] = useState(true);
   const [notifSms, setNotifSms] = useState(true);
 
-  // Language state
+  // Language
   const [selectedLang, setSelectedLang] = useState("English");
 
-  // Support ticket state
+  // Support
   const [supportText, setSupportText] = useState("");
   const [ticketSuccess, setTicketSuccess] = useState("");
 
@@ -46,17 +73,72 @@ export default function CustomerProfilePage() {
         setProfile(d.user);
         if (d.user) {
           setFullName(d.user.profileName ?? "");
-          setAddress(d.user.profile?.address ?? "pedha gantyada, dayal nagar, pydimamba colony");
+          setAddress(d.user.profile?.address ?? "");
           setCity(d.user.profile?.city ?? "Visakhapatnam");
           setPincode(d.user.profile?.pincode ?? "530026");
+          // local device overrides
+          try {
+            const saved = window.localStorage.getItem(`ss.profile.${d.user.phone}`);
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed.fullName) setFullName(parsed.fullName);
+              if (parsed.address) setAddress(parsed.address);
+              if (parsed.city) setCity(parsed.city);
+              if (parsed.pincode) setPincode(parsed.pincode);
+            }
+            const prefs = window.localStorage.getItem(`ss.prefs.${d.user.phone}`);
+            if (prefs) {
+              const parsed = JSON.parse(prefs);
+              if (typeof parsed.notifService === "boolean") setNotifService(parsed.notifService);
+              if (typeof parsed.notifQuotes === "boolean") setNotifQuotes(parsed.notifQuotes);
+              if (typeof parsed.notifSms === "boolean") setNotifSms(parsed.notifSms);
+              if (parsed.lang) setSelectedLang(parsed.lang);
+            }
+          } catch {
+            /* localStorage unavailable */
+          }
         }
       })
-      .finally(() => setLoading(false));
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(""), 3000);
+  };
+
+  const persistLocal = (key: string, value: unknown) => {
+    if (!profile?.phone) return;
+    try {
+      window.localStorage.setItem(`${key}.${profile.phone}`, JSON.stringify(value));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const saveDetails = () => {
+    persistLocal("ss.profile", { fullName, address, city, pincode });
+    setActiveModal(null);
+    showToast("Details updated on this device");
+  };
+
+  const savePrefs = () => {
+    persistLocal("ss.prefs", { notifService, notifQuotes, notifSms, lang: selectedLang });
+    setActiveModal(null);
+    showToast("Preferences saved");
+  };
+
+  const submitTicket = () => {
+    const ticketId = "RES-" + Math.floor(100000 + Math.random() * 900000);
+    persistLocal("ss.support.latest", { ticketId, message: supportText, at: new Date().toISOString() });
+    setTicketSuccess(`Ticket ${ticketId} logged with the society desk. A coordinator will call you shortly.`);
+    setTimeout(() => {
+      setTicketSuccess("");
+      setSupportText("");
+      setActiveModal(null);
+      showToast(`Support ticket ${ticketId} submitted`);
+    }, 2200);
   };
 
   const handleLogout = async () => {
@@ -65,495 +147,351 @@ export default function CustomerProfilePage() {
     router.refresh();
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#faf8ff] flex items-center justify-center">
-        <LoadingSpinner label="Loading customer profile..." />
-      </div>
-    );
+  if (!loaded) {
+    return <LoadingBlock label="Loading your profile…" className="py-24" />;
   }
 
+  const SETTINGS: Array<{
+    id: Exclude<SettingsId, null>;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    badge?: string;
+  }> = [
+    {
+      id: "details",
+      title: "Personal & address details",
+      description: "Your name and default service location",
+      icon: <UserRound className="size-5" />,
+      badge: city,
+    },
+    {
+      id: "notifications",
+      title: "Notification preferences",
+      description: "Quote alerts, arrival updates and receipts",
+      icon: <MessageCircleQuestion className="size-5" />,
+      badge: notifSms ? "SMS on" : "SMS off",
+    },
+    {
+      id: "privacy",
+      title: "Privacy & cooperative data",
+      description: "How your data is used across the platform",
+      icon: <LockKeyhole className="size-5" />,
+    },
+    {
+      id: "language",
+      title: "Language",
+      description: "Choose English, Telugu or Hindi",
+      icon: <Languages className="size-5" />,
+      badge: selectedLang,
+    },
+    {
+      id: "support",
+      title: "Help & support desk",
+      description: "Dispute mediation, grievances and helpline",
+      icon: <Headset className="size-5" />,
+      badge: "24/7",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#faf8ff] text-[#131b2e] pb-24">
-      {/* Toast */}
-      {toastMsg && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#134e3f] text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-[12px] font-bold animate-slide-up">
-          <span className="material-symbols-outlined text-[18px] text-[#b5efda]">check_circle</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="coop-brand px-5 pt-8 md:pt-6 pb-12 text-white relative shadow-md md:rounded-2xl md:mt-4 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-[18px] font-bold text-white">My Profile</h1>
-            <p className="text-[11px] text-[#b5efda]">Verified Cooperative Resident Account</p>
-          </div>
-          <SahakariEmblem size={28} />
-        </div>
+    <PageContainer width="narrow" className="pt-0">
+      {/* ---------- Identity header ---------- */}
+      <div className="-mx-4 sm:mx-0 sm:rounded-3xl bg-gradient-to-br from-brand-800 via-brand-900 to-brand-950 text-white px-5 sm:px-8 pt-8 pb-16 relative overflow-hidden">
+        <div className="absolute -right-10 -top-12 size-48 rounded-full bg-brand-700/40 blur-2xl" aria-hidden />
+        <p className="text-sm text-brand-200/90">My account</p>
+        <h1 className="text-xl font-extrabold mt-0.5">Resident profile</h1>
       </div>
 
-      <div className="px-4 -mt-8 mb-4 max-w-5xl mx-auto w-full">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#d1ddd8] space-y-3">
-          <div className="flex items-center gap-3.5">
-            <div className="w-16 h-16 rounded-2xl bg-[#134e3f] text-white flex items-center justify-center text-2xl font-bold border border-[#d1ddd8] shrink-0">
-              {profile?.profileName?.charAt(0) ?? "C"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-[16px] font-bold text-[#131b2e] truncate">{fullName || "Customer"}</h2>
-              <div className="flex items-center gap-1 text-[12px] text-[#707975] mt-0.5">
-                <span className="material-symbols-outlined text-[14px]">call</span>
-                <span>{profile?.phone}</span>
-              </div>
-              <div className="inline-flex items-center gap-1 mt-1 text-[10px] bg-[#b5efda] text-[#002018] px-2 py-0.2 rounded-md font-semibold">
-                <span className="material-symbols-outlined text-[12px]">verified</span>
-                Resident Shareholder
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-2 flex items-start gap-1.5 text-[12px] text-[#707975] border-t border-[#f2f3ff] pt-2.5">
-            <span className="material-symbols-outlined text-[16px] text-[#904d00] shrink-0">location_on</span>
-            <span className="line-clamp-2">{address}, {city} - {pincode}</span>
+      <Card className="-mt-10 mx-4 sm:mx-2 p-5 relative">
+        <div className="flex items-center gap-4">
+          <Avatar name={fullName || "Customer"} size="xl" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-bold text-ink-900 truncate">{fullName || "Customer"}</h2>
+            <p className="text-sm text-ink-500 inline-flex items-center gap-1.5 mt-0.5">
+              <Phone className="size-3.5" aria-hidden />
+              <span className="tabular-nums">{profile?.phone}</span>
+            </p>
+            <Badge intent="success" dot={false} className="mt-2">
+              <BadgeCheck className="size-3 mr-1" aria-hidden />
+              Verified resident
+            </Badge>
           </div>
         </div>
-      </div>
+        {address && (
+          <p className="mt-4 pt-3.5 border-t border-line text-sm text-ink-600 flex items-start gap-2">
+            <MapPin className="size-4 text-accent-600 mt-0.5 shrink-0" aria-hidden />
+            <span>
+              {address}, {city} — {pincode}
+            </span>
+          </p>
+        )}
+      </Card>
 
-      {/* Profile Settings Options */}
-      <div className="px-4 max-w-5xl mx-auto w-full space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {[
-            {
-              id: "details" as const,
-              icon: "person",
-              label: "Personal & Address Details",
-              desc: "Update your delivery flat, society, and contact info",
-              badge: city,
-            },
-            {
-              id: "notifications" as const,
-              icon: "notifications",
-              label: "Notification Preferences",
-              desc: "WhatsApp dispatch updates, SMS, and quote alerts",
-              badge: "Instant SMS Active",
-            },
-            {
-              id: "privacy" as const,
-              label: "Privacy & Cooperative Data",
-              desc: "End-to-end encryption and member privacy rights",
-              badge: "Encrypted",
-            },
-            {
-              id: "language" as const,
-              label: "Language & Regional Display",
-              desc: "Choose English, Telugu, or Hindi interfaces",
-              badge: selectedLang,
-            },
-            {
-              id: "support" as const,
-              label: "Society Help & Support Desk",
-              desc: "24/7 dispute mediation, grievance tickets & helpline",
-              badge: "Toll-Free Helpline",
-            },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActiveModal(item.id)}
-              className="w-full bg-white rounded-2xl p-4 flex items-center gap-3.5 shadow-2xs border border-[#eaedff] hover:border-[#134e3f] hover:shadow-xs active:scale-[0.99] transition-all text-left group"
+      {/* ---------- Settings ---------- */}
+      <section aria-label="Account settings" className="px-4 sm:px-2 mt-6 space-y-2">
+        {SETTINGS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setActiveModal(item.id)}
+            className="w-full flex items-center gap-3.5 rounded-2xl border border-line bg-panel p-4 text-left hover:shadow-raised hover:border-brand-200 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 group"
+          >
+            <span
+              className="size-10.5 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0 group-hover:bg-brand-700 group-hover:text-white transition-colors"
+              aria-hidden
             >
-              <div className="w-10 h-10 rounded-xl bg-[#f2f3ff] text-[#134e3f] flex items-center justify-center group-hover:bg-[#134e3f] group-hover:text-white transition-colors shrink-0">
-                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="font-bold text-[13px] text-[#131b2e]">{item.label}</div>
-                  <span className="text-[10px] font-semibold text-[#059669] bg-[#b5efda] px-2 py-0.2 rounded-full">
+              {item.icon}
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-sm font-bold text-ink-900">{item.title}</span>
+                {item.badge && (
+                  <Badge intent="neutral" dot={false} className="shrink-0">
                     {item.badge}
-                  </span>
-                </div>
-                <div className="text-[11px] text-[#707975] truncate mt-0.5">{item.desc}</div>
-              </div>
-              <span className="material-symbols-outlined text-[16px] text-[#707975] group-hover:text-[#134e3f] group-hover:translate-x-0.5 transition-all">
-                chevron_right
+                  </Badge>
+                )}
+              </span>
+              <span className="block text-xs text-ink-500 mt-0.5 truncate">{item.description}</span>
+            </span>
+            <ChevronRight className="size-4.5 text-ink-300 group-hover:text-brand-700 group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden />
+          </button>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setLogoutOpen(true)}
+          className="w-full flex items-center gap-3.5 rounded-2xl border border-danger-200 bg-danger-50/60 p-4 text-left hover:bg-danger-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500"
+        >
+          <span className="size-10.5 rounded-xl bg-danger-100 text-danger-600 flex items-center justify-center shrink-0" aria-hidden>
+            <LogOut className="size-5" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-danger-700">Sign out</span>
+            <span className="block text-xs text-danger-600/80 mt-0.5">End this session on this device</span>
+          </span>
+        </button>
+      </section>
+
+      {/* ---------- Cooperative transparency ---------- */}
+      <div className="px-4 sm:px-2 mt-6">
+        <div className="rounded-2xl border border-success-200 bg-success-50/60 p-5 text-center">
+          <Handshake className="size-7 mx-auto text-success-700" aria-hidden />
+          <p className="mt-2 text-sm font-bold text-success-800">Fair trade, worker-owned platform</p>
+          <p className="mt-1 text-xs text-success-800/80 leading-relaxed max-w-sm mx-auto">
+            Platform fees flow directly into fair technician remuneration and the cooperative welfare fund.
+          </p>
+          <p className="mt-3 text-2xs text-success-800/60 inline-flex items-center gap-1.5 justify-center">
+            <Brand compact size={14} className="text-success-800/60" />
+            Shram Setu — व श्रमिक सहकार
+          </p>
+        </div>
+      </div>
+
+      {/* ======================================================= Modals */}
+      {/* 1 — Personal & address */}
+      <Modal
+        open={activeModal === "details"}
+        onClose={() => setActiveModal(null)}
+        title="Personal & address details"
+        description="Used to prefill service requests near you"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setActiveModal(null)}>
+              Cancel
+            </Button>
+            <Button onClick={saveDetails}>Save</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label="Full name" htmlFor="p-fullname">
+            <Input id="p-fullname" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </Field>
+          <Field label="Service address" hint="Flat, building, colony" htmlFor="p-address">
+            <Textarea id="p-address" rows={2} value={address} onChange={(e) => setAddress(e.target.value)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="City" htmlFor="p-city">
+              <Input id="p-city" value={city} onChange={(e) => setCity(e.target.value)} />
+            </Field>
+            <Field label="Pincode" htmlFor="p-pin">
+              <Input id="p-pin" inputMode="numeric" value={pincode} onChange={(e) => setPincode(e.target.value)} />
+            </Field>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 2 — Notification preferences */}
+      <Modal
+        open={activeModal === "notifications"}
+        onClose={() => setActiveModal(null)}
+        title="Notification preferences"
+        description="Control what reaches your phone"
+        footer={
+          <Button className="w-full" onClick={savePrefs}>
+            Save preferences
+          </Button>
+        }
+      >
+        <div className="space-y-2.5">
+          <PreferenceRow label="Arrival & live status updates" description="When your specialist is on the way and on site" checked={notifService} onCheckedChange={setNotifService} />
+          <PreferenceRow label="Quote alerts" description="Instant notifications when new quotes arrive" checked={notifQuotes} onCheckedChange={setNotifQuotes} />
+          <PreferenceRow label="SMS receipts & updates" description="Payment bills and booking confirmations via SMS" checked={notifSms} onCheckedChange={setNotifSms} />
+        </div>
+      </Modal>
+
+      {/* 3 — Privacy */}
+      <Modal
+        open={activeModal === "privacy"}
+        onClose={() => setActiveModal(null)}
+        title="Privacy & data protection"
+        description="Cooperative transparent data charter"
+        footer={
+          <Button className="w-full" onClick={() => setActiveModal(null)}>
+            Understood
+          </Button>
+        }
+      >
+        <div className="rounded-2xl bg-success-50 border border-success-100 p-4">
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold text-success-800">
+            <BadgeCheck className="size-4.5" aria-hidden />
+            Zero commercial data reselling
+          </p>
+          <p className="mt-1.5 text-xs text-success-900/80 leading-relaxed">
+            As a cooperative society platform, your phone number, address and media attachments are never sold to
+            third-party advertisers. They are shared only with your chosen technician during active bookings.
+          </p>
+        </div>
+        <ul className="mt-3 space-y-2 text-sm">
+          <li className="rounded-xl border border-line p-3.5">
+            <p className="font-semibold text-ink-900">Private chat channel</p>
+            <p className="text-xs text-ink-500 mt-0.5">Voice notes and photos travel over the cooperative messaging channel only.</p>
+          </li>
+          <li className="rounded-xl border border-line p-3.5">
+            <p className="font-semibold text-ink-900">Explicit confirmations</p>
+            <p className="text-xs text-ink-500 mt-0.5">Escrow release and work completion always require your confirmation.</p>
+          </li>
+        </ul>
+      </Modal>
+
+      {/* 4 — Language */}
+      <Modal
+        open={activeModal === "language"}
+        onClose={() => setActiveModal(null)}
+        title="Language"
+        description="Select your preferred regional language"
+        footer={
+          <Button className="w-full" onClick={savePrefs}>
+            Apply language
+          </Button>
+        }
+      >
+        <div role="radiogroup" aria-label="Language" className="space-y-2">
+          {LANGUAGES.map((lang) => (
+            <button
+              key={lang.id}
+              type="button"
+              role="radio"
+              aria-checked={selectedLang === lang.id}
+              onClick={() => setSelectedLang(lang.id)}
+              className={cn(
+                "w-full flex items-center justify-between gap-3 rounded-xl border p-3.5 text-left transition-colors",
+                selectedLang === lang.id ? "border-brand-600 bg-brand-50" : "border-line bg-panel hover:border-brand-300"
+              )}
+            >
+              <span>
+                <span className="block text-sm font-bold text-ink-900">{lang.native}</span>
+                <span className="block text-xs text-ink-500 mt-0.5">{lang.hint}</span>
+              </span>
+              <span
+                className={cn(
+                  "size-4.5 rounded-full border-2 shrink-0 inline-flex items-center justify-center",
+                  selectedLang === lang.id ? "border-brand-700" : "border-ink-300"
+                )}
+                aria-hidden
+              >
+                {selectedLang === lang.id && <span className="size-2 rounded-full bg-brand-700" />}
               </span>
             </button>
           ))}
+        </div>
+      </Modal>
 
-          {/* Sign Out */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full bg-[#ffdad6]/60 border border-[#ffdad6] rounded-2xl p-4 flex items-center gap-3.5 hover:bg-[#ffdad6] transition-colors text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[20px]">logout</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-bold text-[13px] text-[#ba1a1a]">Sign Out</div>
-              <div className="text-[11px] text-[#93000a]/80">Logout from your account</div>
-            </div>
-          </button>
+      {/* 5 — Support */}
+      <Modal
+        open={activeModal === "support"}
+        onClose={() => setActiveModal(null)}
+        title="Help & support desk"
+        description="Direct support from your local society admin"
+      >
+        <div className="grid grid-cols-2 gap-2.5">
+          <a href="tel:9000000001" className="rounded-xl border border-success-200 bg-success-50 p-3.5 text-sm font-bold text-success-800 hover:bg-success-100 transition-colors inline-flex items-center gap-2">
+            <Phone className="size-4.5" aria-hidden />
+            Society desk
+          </a>
+          <a href="tel:18004198800" className="rounded-xl border border-line bg-panel p-3.5 text-sm font-bold text-brand-800 hover:bg-brand-50 transition-colors inline-flex items-center gap-2">
+            <Headset className="size-4.5" aria-hidden />
+            24/7 helpline
+          </a>
         </div>
 
-        {/* Cooperative Transparency Card */}
-        <div className="bg-[#b5efda]/40 rounded-2xl p-4 text-center border border-[#b5efda]">
-          <span className="material-symbols-outlined text-[24px] text-[#00362a] mb-1">handshake</span>
-          <div className="text-[12px] font-bold text-[#00362a]">Fair Trade & Worker-Owned Platform</div>
-          <div className="text-[10px] text-[#00362a]/80 mt-0.5">
-            Your platform fees go directly to fair technician remuneration and community welfare funds.
+        {ticketSuccess ? (
+          <div className="mt-4 rounded-xl bg-success-100 text-success-800 p-5 text-center">
+            <BadgeCheck className="size-7 mx-auto" aria-hidden />
+            <p className="mt-2 text-sm font-bold leading-relaxed">{ticketSuccess}</p>
           </div>
-        </div>
+        ) : (
+          <div className="mt-4">
+            <Field label="Describe your issue or question" htmlFor="support-text">
+              <Textarea
+                id="support-text"
+                rows={3}
+                value={supportText}
+                onChange={(e) => setSupportText(e.target.value)}
+                placeholder="e.g. Technician missed the scheduled slot…"
+              />
+            </Field>
+            <Button className="w-full mt-3" disabled={!supportText.trim()} onClick={submitTicket}>
+              Submit ticket
+            </Button>
+          </div>
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        onConfirm={handleLogout}
+        title="Sign out of Shram Setu?"
+        description="You can sign back in anytime with your mobile number and password."
+        confirmLabel="Sign out"
+        destructive
+      />
+
+      {toastMsg && <Toast message={toastMsg} onDismiss={() => setToastMsg("")} />}
+    </PageContainer>
+  );
+}
+
+function PreferenceRow({
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-line bg-panel px-4 py-3.5 min-h-11">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-ink-900">{label}</p>
+        <p className="text-xs text-ink-500 mt-0.5 leading-relaxed">{description}</p>
       </div>
-
-      {/* =========================================================================
-          CUSTOMER MODAL 1: PERSONAL & ADDRESS DETAILS
-          ========================================================================= */}
-      {activeModal === "details" && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up">
-            <div className="flex items-center justify-between pb-2 border-b border-[#eaedff]">
-              <div>
-                <h3 className="text-[15px] font-bold text-[#131b2e]">Personal & Address Details</h3>
-                <p className="text-[11px] text-[#707975]">Used for home service technician dispatch</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-8 h-8 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#707975]"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold text-[#707975] uppercase tracking-wider block mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-[#f2f3ff] border border-[#d1ddd8] rounded-xl px-3 py-2 text-[12px] font-bold"
-              />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold text-[#707975] uppercase tracking-wider block mb-1">
-                Service Address (Flat, Building, Colony)
-              </label>
-              <textarea
-                rows={2}
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-[#f2f3ff] border border-[#d1ddd8] rounded-xl p-2.5 text-[12px]"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] font-bold text-[#707975] uppercase tracking-wider block mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full bg-[#f2f3ff] border border-[#d1ddd8] rounded-xl px-3 py-2 text-[12px]"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-[#707975] uppercase tracking-wider block mb-1">
-                  Pincode
-                </label>
-                <input
-                  type="text"
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  className="w-full bg-[#f2f3ff] border border-[#d1ddd8] rounded-xl px-3 py-2 text-[12px]"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="flex-1 py-2.5 bg-[#f2f3ff] text-[#707975] rounded-xl text-[12px] font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  showToast("Address and profile details updated!");
-                  setActiveModal(null);
-                }}
-                className="flex-1 py-2.5 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold hover:bg-[#00362a]"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          CUSTOMER MODAL 2: NOTIFICATIONS
-          ========================================================================= */}
-      {activeModal === "notifications" && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up">
-            <div className="flex items-center justify-between pb-2 border-b border-[#eaedff]">
-              <div>
-                <h3 className="text-[15px] font-bold text-[#131b2e]">Notification Settings</h3>
-                <p className="text-[11px] text-[#707975]">Control technician updates and order alerts</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-8 h-8 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#707975]"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {[
-                { label: "Technician Arrival & Live Radar", desc: "Get notified when specialist is 10 mins away", val: notifService, setVal: setNotifService },
-                { label: "Cooperative Quote Alerts", desc: "Instant notifications when new quotes are received", val: notifQuotes, setVal: setNotifQuotes },
-                { label: "SMS & WhatsApp Updates", desc: "Receive OTP and digital payment bills via message", val: notifSms, setVal: setNotifSms },
-              ].map((n, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-[#eaedff] bg-white">
-                  <div>
-                    <div className="text-[12px] font-bold text-[#131b2e]">{n.label}</div>
-                    <div className="text-[10px] text-[#707975]">{n.desc}</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={n.val}
-                    onChange={(e) => n.setVal(e.target.checked)}
-                    className="w-5 h-5 accent-[#134e3f] cursor-pointer"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  showToast("Notification preferences updated!");
-                  setActiveModal(null);
-                }}
-                className="w-full py-2.5 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold"
-              >
-                Save Preferences
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          CUSTOMER MODAL 3: PRIVACY & SECURITY
-          ========================================================================= */}
-      {activeModal === "privacy" && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up">
-            <div className="flex items-center justify-between pb-2 border-b border-[#eaedff]">
-              <div>
-                <h3 className="text-[15px] font-bold text-[#131b2e]">Privacy & Data Protection</h3>
-                <p className="text-[11px] text-[#707975]">Cooperative transparent data charter</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-8 h-8 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#707975]"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-
-            <div className="bg-[#b5efda]/30 p-3.5 rounded-2xl border border-[#b5efda] space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[#00362a] font-bold text-[12px]">
-                <span className="material-symbols-outlined text-[16px] text-[#059669]">verified_user</span>
-                Zero Commercial Data Reselling
-              </div>
-              <p className="text-[11px] text-[#00362a]/80 leading-relaxed">
-                As a cooperative society platform, your phone number, flat address, and media attachments are never sold to external third-party advertisers. They are only shared with your chosen service technician during active bookings.
-              </p>
-            </div>
-
-            <div className="space-y-1.5 text-[12px]">
-              <div className="p-3 bg-white rounded-xl border border-[#eaedff]">
-                <div className="font-bold text-[#131b2e]">End-to-End Chat Encryption</div>
-                <div className="text-[10px] text-[#707975]">Voice notes and photos are transmitted via private cooperative channel.</div>
-              </div>
-              <div className="p-3 bg-white rounded-xl border border-[#eaedff]">
-                <div className="font-bold text-[#131b2e]">One-Time Password (OTP) Safety</div>
-                <div className="text-[10px] text-[#707975]">Payment receipts and completion releases require explicit resident confirmation.</div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-full py-2.5 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold"
-              >
-                Understood
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          CUSTOMER MODAL 4: LANGUAGE
-          ========================================================================= */}
-      {activeModal === "language" && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up">
-            <div className="flex items-center justify-between pb-2 border-b border-[#eaedff]">
-              <div>
-                <h3 className="text-[15px] font-bold text-[#131b2e]">Language & Accessibility</h3>
-                <p className="text-[11px] text-[#707975]">Select your preferred regional language</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-8 h-8 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#707975]"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {[
-                { name: "English", sub: "Standard English interface" },
-                { name: "తెలుగు (Telugu)", sub: "ఆంధ్రప్రదేశ్ మరియు తెలంగాణ ప్రాంతీయ భాష" },
-                { name: "हिन्दी (Hindi)", sub: "राष्ट्रीय भाषा इंटरफ़ेस" },
-              ].map((lang) => (
-                <label
-                  key={lang.name}
-                  onClick={() => setSelectedLang(lang.name.split(" ")[0])}
-                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${
-                    selectedLang === lang.name.split(" ")[0]
-                      ? "bg-[#f2f3ff] border-[#134e3f]"
-                      : "bg-white border-[#eaedff]"
-                  }`}
-                >
-                  <div>
-                    <div className="text-[13px] font-bold text-[#131b2e]">{lang.name}</div>
-                    <div className="text-[10px] text-[#707975]">{lang.sub}</div>
-                  </div>
-                  <input
-                    type="radio"
-                    name="selectedLang"
-                    checked={selectedLang === lang.name.split(" ")[0]}
-                    onChange={() => setSelectedLang(lang.name.split(" ")[0])}
-                    className="accent-[#134e3f]"
-                  />
-                </label>
-              ))}
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  showToast(`Language set to ${selectedLang}`);
-                  setActiveModal(null);
-                }}
-                className="w-full py-2.5 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold"
-              >
-                Apply Language
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          CUSTOMER MODAL 5: HELP & SUPPORT DESK
-          ========================================================================= */}
-      {activeModal === "support" && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up">
-            <div className="flex items-center justify-between pb-2 border-b border-[#eaedff]">
-              <div>
-                <h3 className="text-[15px] font-bold text-[#131b2e]">Resident Help & Mediation Desk</h3>
-                <p className="text-[11px] text-[#707975]">Direct support from your local Society Admin</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="w-8 h-8 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#707975]"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <a
-                href="tel:9000000001"
-                className="p-3 bg-[#b5efda]/40 border border-[#b5efda] rounded-xl flex items-center gap-2 text-[#00362a] font-bold text-[12px] hover:bg-[#b5efda]"
-              >
-                <span className="material-symbols-outlined text-[18px]">call</span>
-                <span>Society Desk</span>
-              </a>
-
-              <a
-                href="tel:18004250001"
-                className="p-3 bg-[#f2f3ff] border border-[#d1ddd8] rounded-xl flex items-center gap-2 text-[#134e3f] font-bold text-[12px] hover:bg-[#eaedff]"
-              >
-                <span className="material-symbols-outlined text-[18px]">headset_mic</span>
-                <span>24/7 Helpline</span>
-              </a>
-            </div>
-
-            {ticketSuccess ? (
-              <div className="p-4 bg-[#b5efda] text-[#002018] rounded-xl text-center space-y-1">
-                <span className="material-symbols-outlined text-[24px] text-[#059669]">check_circle</span>
-                <p className="text-[12px] font-bold">{ticketSuccess}</p>
-              </div>
-            ) : (
-              <div className="space-y-2 pt-1">
-                <label className="text-[11px] font-bold text-[#707975] uppercase tracking-wider block">
-                  Submit Support or Mediation Query
-                </label>
-                <textarea
-                  rows={3}
-                  value={supportText}
-                  onChange={(e) => setSupportText(e.target.value)}
-                  placeholder="Describe your issue or technician question..."
-                  className="w-full bg-[#f2f3ff] border border-[#d1ddd8] rounded-xl p-2.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[#134e3f]"
-                />
-
-                <button
-                  type="button"
-                  disabled={!supportText.trim()}
-                  onClick={() => {
-                    const ticketId = "RES-" + Math.floor(100000 + Math.random() * 900000);
-                    setTicketSuccess(`Support Ticket #${ticketId} submitted. A Society Coordinator will call you shortly.`);
-                    setTimeout(() => {
-                      setTicketSuccess("");
-                      setSupportText("");
-                      setActiveModal(null);
-                      showToast(`Support Ticket #${ticketId} dispatched!`);
-                    }, 2200);
-                  }}
-                  className="w-full py-2.5 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold disabled:opacity-40"
-                >
-                  Submit Query
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <Switch checked={checked} onCheckedChange={onCheckedChange} label={label} />
     </div>
   );
 }

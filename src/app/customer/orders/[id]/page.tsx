@@ -1,12 +1,33 @@
 "use client";
 
 import React, { useState, useEffect, use } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SahakariEmblem from "@/components/SahakariEmblem";
-import { StatusBadge } from "@/components/StatusBadge";
-import { StarRating } from "@/components/StarRating";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import {
+  BadgeCheck,
+  CalendarDays,
+  MapPin,
+  MessageSquare,
+  Phone,
+  RefreshCcw,
+  Radio,
+  ShieldCheck,
+  Star,
+  Zap,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/cn";
+import { bookingRef, formatDateTime, formatINR } from "@/lib/format";
+import { ServiceIcon } from "@/lib/serviceIcons";
+import { LoadingBlock, EmptyState, Toast } from "@/components/ui/states";
+import { Button, buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { PageContainer, PageHeader } from "@/components/ui/page-header";
+import { StatusBadge, Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
+import { StarRating } from "@/components/StarRating";
+import { BookingTimeline } from "@/components/ui/timeline";
+import { Textarea } from "@/components/ui/form";
 
 interface BookingData {
   booking: {
@@ -41,10 +62,13 @@ interface BookingData {
       amount: string;
       note?: string | null;
       estimatedArrival?: string | null;
+      status?: string | null;
+      createdAt?: string;
     };
     provider: {
       displayName: string;
       ratingAvg?: string | null;
+      ratingCount?: number | null;
       experience?: number | null;
       serviceArea?: string | null;
     } | null;
@@ -56,12 +80,7 @@ interface BookingData {
     reason: string;
     status?: string | null;
   }>;
-  payment: {
-    id: string;
-    method: string;
-    paidAmount?: string | null;
-    status: string;
-  } | null;
+  payment: { id: string; method: string; paidAmount?: string | null; status: string } | null;
   invoice: {
     id: string;
     invoiceNumber: string;
@@ -69,58 +88,8 @@ interface BookingData {
     platformFee?: string | null;
     totalAmount?: string | null;
   } | null;
-  rating: {
-    id: string;
-    rating: number;
-    reviewText?: string | null;
-  } | null;
+  rating: { id: string; rating: number; reviewText?: string | null } | null;
 }
-
-// Fallback high-fidelity sample quotes matching Stitch specs if backend quotes list is small
-const SAMPLE_QUOTES = [
-  {
-    name: "Rajesh Verma",
-    rating: "4.9",
-    reviews: 342,
-    society: "Pragati Labour Cooperative Society #12 • 1.2 km away",
-    badge: "Recommended • Closest",
-    eta: "~25 mins ETA",
-    amount: "₹350 - ₹450",
-    rawAmount: "350",
-    note: "₹200 inspection/base labour + estimated switch/fuse component",
-    memberQuote: "Have replacement 2.5µF capacitors and heavy-duty regulator switches in current vehicle kit.",
-    skills: ["Aadhaar Verified", "ITI Certified Electrician", "Coop Shareholder"],
-    img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    name: "Suresh Kumar",
-    rating: "4.8",
-    reviews: 218,
-    society: "Civic Union Electrical Unit #4 • 2.1 km away",
-    badge: "Fixed Diagnostics",
-    eta: "Available Today 4:30 PM",
-    amount: "₹400 fixed",
-    rawAmount: "400",
-    note: "Comprehensive switchboard, earth-leakage & MCB trip test included.",
-    memberQuote: "Standard diagnostics kit with insulated multimeters ready on site.",
-    skills: ["Aadhaar Verified", "Govt Skill India Certified"],
-    img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    name: "Amit Patil",
-    rating: "4.9",
-    reviews: 410,
-    society: "South District Federation Cooperative • 2.8 km away",
-    badge: "Senior Wireman",
-    eta: "Arrives in ~40 mins",
-    amount: "₹300 - ₹500",
-    rawAmount: "380",
-    note: "Rate tiered based on multi-pole breaker diagnostics and rewiring check.",
-    memberQuote: "Master wireman with 15+ years municipal electrical experience.",
-    skills: ["Master Wireman License", "Industrial Grade Safety"],
-    img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80",
-  },
-];
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -128,13 +97,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [data, setData] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [selectedSort, setSelectedSort] = useState<"verified" | "closest" | "benchmark">("verified");
   const [toastMessage, setToastMessage] = useState<{ title: string; desc: string } | null>(null);
   const [ratingVal, setRatingVal] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cash">("online");
 
-  const fetchData = async () => {
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await apiFetch(`/api/bookings/${id}`);
       const d = await res.json();
@@ -142,27 +111,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     } catch (e) {
       console.error("Failed to fetch booking", e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    const t = setTimeout(() => void fetchData(), 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const showToast = (title: string, desc: string) => {
+    setToastMessage({ title, desc });
+    setTimeout(() => setToastMessage(null), 4500);
+  };
 
   const performAction = async (action: string, extra: Record<string, unknown> = {}) => {
     setActionLoading(true);
     try {
       const res = await apiFetch(`/api/bookings/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...extra }),
       });
       const d = await res.json();
       if (res.ok) {
-        await fetchData();
+        await fetchData(true);
       } else {
-        alert(d.error || "Action could not be completed.");
+        showToast("Action failed", d.error ?? "Please try again.");
       }
     } finally {
       setActionLoading(false);
@@ -170,41 +145,28 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   const handleSelectProvider = async (providerId: string, providerName: string, quoteAmount: string) => {
-    setToastMessage({
-      title: `${providerName} Selected`,
-      desc: `${quoteAmount} held in Federation Protected Escrow`,
-    });
-
     await performAction("select_provider", {
       providerId,
       initialAmount: quoteAmount.replace(/[^0-9.]/g, ""),
     });
-
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4500);
+    showToast(`${providerName} selected`, "Amount held in cooperative escrow until completion.");
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <LoadingSpinner label="Loading cooperative service details..." />
-      </div>
-    );
+    return <LoadingBlock label="Loading your booking…" className="py-24" />;
   }
 
   if (!data?.booking) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-surface text-center">
-        <div className="text-4xl mb-3">📋</div>
-        <p className="text-[14px] font-bold text-on-surface">Service engagement not found</p>
-        <button
-          onClick={() => router.push("/customer/orders")}
-          className="mt-4 px-4 py-2 bg-[#134e3f] text-white rounded-xl text-[12px] font-semibold"
-        >
-          View All Bookings
-        </button>
-      </div>
+      <PageContainer width="narrow">
+        <EmptyState
+          title="Booking not found"
+          description="This booking may have been removed, or the link is incomplete."
+          action={
+            <Button onClick={() => router.push("/customer/orders")}>View all orders</Button>
+          }
+        />
+      </PageContainer>
     );
   }
 
@@ -212,595 +174,487 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const status = booking.status;
   const isQuoting = status === "submitted" || status === "quoted";
   const latestRevision = priceRevisions[priceRevisions.length - 1];
+  const isCancelled = ["cancelled", "cancellation_pending", "disputed"].includes(status);
 
   return (
-    <div className="min-h-screen bg-surface font-body text-on-surface antialiased flex flex-col pb-24">
-      {/* Fixed Civic Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-xl border-b border-[#d1ddd8] shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe">
-        <div className="h-16 max-w-md mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={() => router.push("/customer/orders")}
-              className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-on-surface hover:bg-[#f2f3ff] active:scale-95 transition-all"
-            >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
-            </button>
-            <SahakariEmblem size={28} />
-            <div className="min-w-0">
-              <h1 className="text-[14px] font-bold text-on-surface truncate">
-                {isQuoting ? "Provider Quotes & Comparison" : category?.name ?? "Order Tracking"}
-              </h1>
-              <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#707975]">
-                <span>#BK-{id.slice(0, 6).toUpperCase()}</span>
-                <span>•</span>
-                <span className="text-[#134e3f] font-semibold">{status.replace(/_/g, " ")}</span>
+    <PageContainer width="default">
+      <PageHeader
+        backHref="/customer/orders"
+        title={isQuoting ? "Compare provider quotes" : (category?.name ?? "Order tracking")}
+        description={booking.serviceDescription}
+        meta={
+          <>
+            <StatusBadge status={status} size="sm" />
+            <Badge intent="neutral" dot={false}>
+              <span className="font-mono">{bookingRef(id)}</span>
+            </Badge>
+            {booking.isEmergency ? (
+              <Badge intent="warning" dot={false}>
+                <Zap className="size-3 mr-0.5" aria-hidden /> Immediate
+              </Badge>
+            ) : null}
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        {/* ================================================= Main column */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* ---------- Cancelled banner ---------- */}
+          {isCancelled && (
+            <Card className="p-5 border-l-4 border-l-danger-400">
+              <p className="font-bold text-ink-900">{status === "disputed" ? "This booking is disputed" : "This booking was cancelled"}</p>
+              <p className="text-sm text-ink-500 mt-1">
+                Contact the society helpdesk if you believe this is a mistake.
+              </p>
+              <div className="mt-4 flex gap-2.5">
+                <Link href="/customer/book" className={buttonClasses({ size: "sm" })}>
+                  Book again
+                </Link>
+                <a href="tel:18004198800" className={buttonClasses({ variant: "outline", size: "sm" })}>
+                  <Phone className="size-4" aria-hidden /> Helpdesk
+                </a>
               </div>
-            </div>
-          </div>
+            </Card>
+          )}
 
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse"></span>
-            <span className="font-mono text-[10px] text-[#059669] font-bold uppercase">Active</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1 flex flex-col w-full max-w-md mx-auto px-4 pt-18">
-        {/* QUOTES COMPARISON VIEW (Stitch Screen 106004d676984583b6e7f07d58c4e362) */}
-        {isQuoting ? (
-          <div className="flex flex-col gap-3 py-2">
-            {/* Live Broadcast Status Header */}
-            <section className="civic-card p-3.5 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="material-symbols-outlined text-[#904d00] text-[20px]">
-                    broadcast_on_personal
+          {/* ---------- Quotes comparison ---------- */}
+          {isQuoting && (
+            <>
+              <Card className="p-5">
+                <div className="flex items-start gap-3.5">
+                  <span className="relative mt-1 size-2.5 shrink-0" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-60 animate-ping" />
+                    <span className="relative inline-flex size-2.5 rounded-full bg-brand-600" />
                   </span>
-                  <span className="font-mono text-[11px] text-[#707975] truncate">
-                    Request #BK-{id.slice(0, 6).toUpperCase()}
-                  </span>
-                </div>
-                <span className="bg-[#ffdcc3] text-[#904d00] px-2 py-0.5 rounded-full font-mono text-[10px] font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#904d00] animate-pulse"></span>
-                  Active Quorum
-                </span>
-              </div>
-
-              <div>
-                <h2 className="text-[15px] font-bold text-on-surface leading-tight">
-                  {booking.serviceDescription || "Diagnostic & Repair Request"}
-                </h2>
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <p className="text-[12px] text-[#904d00] font-semibold flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[16px]">groups</span>
-                    3 Cooperative Quotes Received • Society Area #42
-                  </p>
-                  {booking.isEmergency ? (
-                    <span className="bg-[#ffdad6] text-[#ba1a1a] px-2 py-0.5 rounded-full font-mono text-[10px] font-bold flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-[12px]">bolt</span>
-                      Immediate (within 2h)
-                    </span>
-                  ) : booking.preferredTime ? (
-                    <span className="bg-[#b5efda] text-[#002018] px-2 py-0.5 rounded-full font-mono text-[10px] font-bold flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-[12px]">event</span>
-                      Scheduled: {new Date(booking.preferredTime).toLocaleDateString([], { month: "short", day: "numeric" })}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-
-              {/* Inspection Media Attachments if any */}
-              {booking.mediaUrls && booking.mediaUrls.length > 0 && (
-                <div className="pt-1 space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    {booking.mediaUrls.map((url, idx) => {
-                      const isAudio = url.startsWith("data:audio") || /\.(mp3|wav|ogg|webm|m4a)/i.test(url);
-                      if (isAudio) {
-                        return (
-                          <div key={idx} className="w-full bg-[#f2f3ff] p-2.5 rounded-xl border border-[#d1ddd8]">
-                            <span className="text-[11px] font-bold text-[#134e3f] block mb-1">Your Voice Note:</span>
-                            <audio src={url} controls className="w-full h-8" />
-                          </div>
-                        );
-                      }
-                      return (
-                        <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block relative w-16 h-16 rounded-xl overflow-hidden border border-[#d1ddd8] shadow-xs">
-                          <img src={url} alt={`Inspection Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                        </a>
-                      );
-                    })}
+                  <div>
+                    <p className="text-sm font-bold text-ink-900">
+                      {quotes.length > 0
+                        ? `${quotes.length} quote${quotes.length > 1 ? "s" : ""} received — select your specialist`
+                        : "Broadcasting to certified members nearby…"}
+                    </p>
+                    <p className="text-xs text-ink-500 mt-1 leading-relaxed">
+                      Estimates follow cooperative benchmark rates. You approve the final price on-site
+                      before work starts.
+                    </p>
                   </div>
+                  <Button variant="ghost" size="icon-sm" onClick={() => fetchData()} aria-label="Refresh quotes" className="ml-auto shrink-0">
+                    <RefreshCcw className="size-4" />
+                  </Button>
+                </div>
+              </Card>
+
+              {quotes.length === 0 ? (
+                <Card className="p-6 text-center">
+                  <span className="size-12 rounded-2xl bg-brand-50 text-brand-700 inline-flex items-center justify-center" aria-hidden>
+                    <Radio className="size-6" />
+                  </span>
+                  <h3 className="mt-3 font-bold text-ink-900">Waiting for quotes</h3>
+                  <p className="mt-1 text-sm text-ink-500 max-w-sm mx-auto leading-relaxed">
+                    Your request is live with technicians in your area. Quotes usually arrive within a
+                    few minutes — we&apos;ll keep this page updated.
+                  </p>
+                  <Button variant="secondary" size="sm" className="mt-4" onClick={() => fetchData()}>
+                    <RefreshCcw className="size-4" aria-hidden />
+                    Refresh now
+                  </Button>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {quotes.map(({ quote, provider }) => (
+                    <Card key={quote.id} className="p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <Avatar name={provider?.displayName ?? "Member"} size="lg" />
+                          <div className="min-w-0">
+                            <p className="font-bold text-ink-900 truncate flex items-center gap-1.5">
+                              {provider?.displayName ?? "Cooperative member"}
+                              <BadgeCheck className="size-4 text-brand-600 shrink-0" aria-hidden />
+                            </p>
+                            <p className="text-xs text-ink-500 mt-0.5 truncate">
+                              {provider?.experience ? `${provider.experience}y experience` : "Society member"}
+                              {provider?.serviceArea ? ` • ${provider.serviceArea}` : ""}
+                            </p>
+                            {Number(provider?.ratingAvg) > 0 && (
+                              <p className="text-xs font-semibold text-ink-700 mt-1 inline-flex items-center gap-1">
+                                <Star className="size-3.5 fill-accent-400 text-accent-400" aria-hidden />
+                                {provider?.ratingAvg}
+                                {provider?.ratingCount ? <span className="text-ink-400 font-normal">({provider.ratingCount})</span> : null}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-extrabold text-ink-900 tabular-nums">{formatINR(quote.amount)}</p>
+                          <p className="text-2xs text-ink-400">Initial estimate</p>
+                        </div>
+                      </div>
+
+                      {(quote.note || quote.estimatedArrival) && (
+                        <div className="mt-4 grid sm:grid-cols-2 gap-2.5">
+                          {quote.note && (
+                            <div className="sm:col-span-2 rounded-xl bg-ink-50 border border-line px-3.5 py-2.5 text-sm text-ink-700 leading-relaxed">
+                              {quote.note}
+                            </div>
+                          )}
+                          {quote.estimatedArrival && (
+                            <Badge intent="info" dot={false} className="w-fit">
+                              Arrival: {quote.estimatedArrival}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-4 pt-4 border-t border-line flex items-center gap-2.5">
+                        <Link
+                          href={`/customer/messages?bookingId=${id}&providerId=${quote.providerId}`}
+                          className={buttonClasses({ variant: "outline", size: "md", className: "shrink-0" })}
+                        >
+                          <MessageSquare className="size-4" aria-hidden />
+                          Chat
+                        </Link>
+                        <Button
+                          className="flex-1"
+                          loading={actionLoading}
+                          onClick={() =>
+                            handleSelectProvider(
+                              quote.providerId,
+                              provider?.displayName ?? "Provider",
+                              quote.amount
+                            )
+                          }
+                        >
+                          Select this provider
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
               )}
 
-              {/* Pulse Beacon Bar */}
-              <div className="bg-[#f2f3ff] rounded-xl p-2.5 flex items-center gap-2 border border-[#d1ddd8]">
-                <div className="relative flex items-center justify-center w-5 h-5 shrink-0">
-                  <span className="absolute w-4 h-4 rounded-full bg-[#904d00] opacity-30 animate-ping"></span>
-                  <span className="w-2 h-2 rounded-full bg-[#904d00]"></span>
-                </div>
-                <p className="text-[11px] text-on-surface-variant leading-tight">
-                  Broadcasting to 8 nearby certified specialists in 3 km radius
+              <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-4 flex gap-3">
+                <ShieldCheck className="size-5 text-brand-700 shrink-0" aria-hidden />
+                <p className="text-xs text-brand-900/90 leading-relaxed">
+                  <strong>Escrow protection:</strong> payment is held by the cooperative and released only
+                  after you confirm the completed work.
                 </p>
               </div>
-            </section>
+            </>
+          )}
 
-            {/* Filter & Sort Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-              <button
-                type="button"
-                onClick={() => setSelectedSort("verified")}
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 shrink-0 transition-all ${
-                  selectedSort === "verified"
-                    ? "bg-[#134e3f] text-white shadow-xs"
-                    : "bg-[#eaedff] text-on-surface hover:bg-[#dae2fd]"
-                }`}
+          {/* ---------- Assigned provider ---------- */}
+          {!isQuoting && providerProfile && (
+            <Card className="p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-ink-400 mb-3.5">Assigned specialist</p>
+              <div className="flex items-center gap-4">
+                <Avatar name={providerProfile.displayName} size="xl" online />
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-bold text-ink-900 truncate">{providerProfile.displayName}</p>
+                  <p className="text-xs text-ink-500 mt-0.5">
+                    {providerProfile.experience ? `${providerProfile.experience}y experience` : "Cooperative member"}
+                    {providerProfile.ratingAvg ? ` • ★ ${providerProfile.ratingAvg}` : ""}
+                  </p>
+                  <Badge intent="success" dot={false} className="mt-2">
+                    <BadgeCheck className="size-3 mr-1" aria-hidden />
+                    Cooperative verified
+                  </Badge>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-line grid grid-cols-2 gap-2.5">
+                <Link
+                  href={`/customer/messages?bookingId=${id}&providerId=${booking.providerId || providerProfile.id}`}
+                  className={buttonClasses({ variant: "secondary", size: "md" })}
+                >
+                  <MessageSquare className="size-4" aria-hidden />
+                  Chat
+                </Link>
+                <a href="tel:9200000001" className={buttonClasses({ variant: "secondary", size: "md" })}>
+                  <Phone className="size-4" aria-hidden />
+                  Call
+                </a>
+              </div>
+            </Card>
+          )}
+
+          {/* ---------- Next-action panels ---------- */}
+          {status === "arrived_pending_confirmation" && (
+            <ActionPanel intent="warning" title="Your specialist has arrived" body="Confirm the technician is on-site so work can begin.">
+              <Button variant="accent" className="w-full" loading={actionLoading} onClick={() => performAction("confirm_arrival")}>
+                Confirm arrival on site
+              </Button>
+            </ActionPanel>
+          )}
+
+          {status === "price_change_pending" && latestRevision && (
+            <ActionPanel intent="warning" title="Price revision requested" body={<>The technician requests a change after on-site inspection: <em className="not-italic font-semibold">{latestRevision.reason}</em></>}>
+              <div className="rounded-xl bg-white border border-line p-3.5 space-y-1.5 text-sm mb-4">
+                <div className="flex justify-between">
+                  <span className="text-ink-500">Original estimate</span>
+                  <span className="font-semibold tabular-nums">{formatINR(latestRevision.originalAmount)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-accent-800">
+                  <span>Revised amount</span>
+                  <span className="tabular-nums">{formatINR(latestRevision.proposedAmount)}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <Button variant="primary" loading={actionLoading} onClick={() => performAction("approve_price_change", { proposedAmount: latestRevision.proposedAmount })}>
+                  Accept new price
+                </Button>
+                <Button variant="destructive" disabled={actionLoading} onClick={() => performAction("reject_price_change")}>
+                  Reject
+                </Button>
+              </div>
+            </ActionPanel>
+          )}
+
+          {status === "completed_pending_confirmation" && (
+            <ActionPanel intent="success" title="Work marked as completed" body="Inspect the work — once you confirm, the escrow settles to settlement.">
+              <Button variant="success" className="w-full" loading={actionLoading} onClick={() => performAction("confirm_completion")}>
+                Confirm &amp; accept work
+              </Button>
+            </ActionPanel>
+          )}
+
+          {status === "completed" && !payment && (
+            <Card className="p-5">
+              <h3 className="font-bold text-ink-900">Payment</h3>
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-ink-50 border border-line px-4 py-3">
+                <span className="text-sm text-ink-500">Amount payable</span>
+                <span className="text-lg font-extrabold text-ink-900 tabular-nums">
+                  {formatINR(booking.totalAmount || booking.finalPrice)}
+                </span>
+              </div>
+              <div role="radiogroup" aria-label="Payment method" className="mt-3 grid grid-cols-2 gap-2.5">
+                {(["online", "cash"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={paymentMethod === m}
+                    onClick={() => setPaymentMethod(m)}
+                    className={cn(
+                      "rounded-xl border px-4 py-3 text-sm font-bold transition-colors",
+                      paymentMethod === m ? "bg-brand-700 text-white border-brand-700" : "bg-white border-line hover:border-line-strong"
+                    )}
+                  >
+                    {m === "online" ? "UPI / Online" : "Cash on spot"}
+                  </button>
+                ))}
+              </div>
+              <Button
+                className="w-full mt-4"
+                size="lg"
+                loading={actionLoading}
+                onClick={() => performAction("record_payment", { method: paymentMethod, amount: booking.totalAmount || booking.finalPrice })}
               >
-                <span className="material-symbols-outlined text-[14px]">verified</span>
-                All 3 Verified
-              </button>
+                Pay {formatINR(booking.totalAmount || booking.finalPrice)}
+              </Button>
+            </Card>
+          )}
 
-              <button
-                type="button"
-                onClick={() => setSelectedSort("closest")}
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 shrink-0 transition-all ${
-                  selectedSort === "closest"
-                    ? "bg-[#134e3f] text-white shadow-xs"
-                    : "bg-[#eaedff] text-on-surface hover:bg-[#dae2fd]"
-                }`}
+          {status === "paid" && !rating && (
+            <Card className="p-5">
+              <h3 className="font-bold text-ink-900">Rate your specialist</h3>
+              <p className="text-sm text-ink-500 mt-1">Your review protects the cooperative&apos;s quality standard.</p>
+              <div className="flex justify-center py-4">
+                <StarRating rating={ratingVal} onRate={setRatingVal} size={32} />
+              </div>
+              <Textarea
+                rows={3}
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Share a short review (optional)…"
+                aria-label="Review"
+              />
+              <Button
+                className="w-full mt-3"
+                loading={actionLoading}
+                onClick={() => performAction("submit_rating", { rating: ratingVal, reviewText })}
               >
-                <span className="material-symbols-outlined text-[14px]">near_me</span>
-                Closest First
-              </button>
+                Submit review
+              </Button>
+            </Card>
+          )}
 
-              <button
-                type="button"
-                onClick={() => setSelectedSort("benchmark")}
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 shrink-0 transition-all ${
-                  selectedSort === "benchmark"
-                    ? "bg-[#134e3f] text-white shadow-xs"
-                    : "bg-[#eaedff] text-on-surface hover:bg-[#dae2fd]"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[14px]">price_check</span>
-                Union Benchmark
-              </button>
-            </div>
-
-            {/* Provider Comparison Cards */}
-            <div className="flex flex-col gap-3">
-              {SAMPLE_QUOTES.map((sq, idx) => {
-                const actualQuote = quotes[idx];
-                const providerId = actualQuote?.quote?.providerId || `provider-sample-${idx}`;
-                const displayAmount = actualQuote ? `₹${parseFloat(actualQuote.quote.amount).toFixed(0)}` : sq.amount;
-                const displayName = actualQuote?.provider?.displayName || sq.name;
-
-                return (
-                  <article key={idx} className="civic-card p-3.5 flex flex-col gap-2.5 shadow-xs relative overflow-hidden">
-                    {/* Ribbon Badge & ETA */}
-                    <div className="flex items-center justify-between">
-                      <span className="bg-[#ffdcc3] text-[#904d00] font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[13px]">stars</span>
-                        {sq.badge}
-                      </span>
-
-                      <span className="text-[11px] text-[#904d00] font-semibold flex items-center gap-1 bg-[#f2f3ff] px-2 py-0.5 rounded-md border border-[#d1ddd8]">
-                        <span className="material-symbols-outlined text-[14px]">schedule</span>
-                        {actualQuote?.quote?.estimatedArrival || sq.eta}
-                      </span>
-                    </div>
-
-                    {/* Technician Profile Header */}
-                    <div className="flex items-start gap-2.5 pt-0.5">
-                      <img
-                        src={sq.img}
-                        alt={displayName}
-                        className="w-13 h-13 w-12 h-12 rounded-xl object-cover shrink-0 border border-[#d1ddd8]"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <h3 className="text-[14px] font-bold text-on-surface truncate">{displayName}</h3>
-                          <div className="flex items-center gap-0.5 text-[#904d00] shrink-0 bg-[#ffdcc3] px-1.5 py-0.2 rounded-full text-[11px] font-bold">
-                            <span className="material-symbols-outlined text-[13px]">star</span>
-                            <span>{actualQuote?.provider?.ratingAvg || sq.rating}</span>
-                            <span className="text-on-surface-variant font-normal">({sq.reviews})</span>
-                          </div>
-                        </div>
-                        <p className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                          <span className="material-symbols-outlined text-[13px] text-[#904d00]">location_on</span>
-                          {actualQuote?.provider?.serviceArea || sq.society}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Verified Skill Badges */}
-                    <div className="flex flex-wrap gap-1">
-                      {sq.skills.map((skill, sIdx) => (
-                        <span
-                          key={sIdx}
-                          className="bg-[#f2f3ff] text-[#134e3f] border border-[#d1ddd8] px-2 py-0.5 rounded-md text-[10px] font-semibold flex items-center gap-1"
-                        >
-                          <span className="material-symbols-outlined text-[12px] text-[#059669]">verified</span>
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Estimate & Breakup Ledger */}
-                    <div className="bg-[#f2f3ff] rounded-xl p-2.5 border border-[#d1ddd8] space-y-1">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-[11px] font-medium text-on-surface-variant">Initial Estimate</span>
-                        <span className="font-mono text-[16px] font-bold text-[#134e3f]">{displayAmount}</span>
-                      </div>
-                      <p className="text-[10px] text-[#707975] leading-tight">
-                        Initial Estimate — subject to on-site inspection
-                      </p>
-                      <div className="pt-0.5 flex items-start gap-1 text-[11px] text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[14px] text-[#904d00] mt-0.5 shrink-0">
-                          receipt
-                        </span>
-                        <span>{actualQuote?.quote?.note || sq.note}</span>
-                      </div>
-                    </div>
-
-                    {/* Member Note Statement */}
-                    <div className="bg-white p-2 rounded-lg border border-[#eaedff] flex items-start gap-1.5">
-                      <span className="material-symbols-outlined text-[#707975] text-[15px] shrink-0 mt-0.5">
-                        chat_bubble_outline
-                      </span>
-                      <p className="text-[11px] text-on-surface italic leading-snug">
-                        &ldquo;{sq.memberQuote}&rdquo;
-                      </p>
-                    </div>
-
-                    {/* Action Triggers */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        type="button"
-                        aria-label={`Chat with ${displayName}`}
-                        onClick={() => {
-                          const pId = actualQuote?.quote?.providerId || (quotes[0]?.quote?.providerId) || "provider-sample";
-                          router.push(`/customer/messages?bookingId=${id}&providerId=${pId}`);
-                        }}
-                        className="w-10 h-10 rounded-xl bg-[#f2f3ff] border border-[#d1ddd8] flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-[#eaedff] transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">chat</span>
-                      </button>
-
-                      <a
-                        href="tel:9200000001"
-                        aria-label={`Call ${displayName}`}
-                        className="w-10 h-10 rounded-xl bg-[#f2f3ff] border border-[#d1ddd8] flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-[#eaedff] transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">call</span>
-                      </a>
-
-                      <button
-                        type="button"
-                        disabled={actionLoading}
-                        onClick={() => handleSelectProvider(providerId, displayName, displayAmount)}
-                        className="flex-1 h-10 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold flex items-center justify-center gap-1 shadow-xs hover:bg-[#00362a] active:scale-[0.99] transition-all disabled:opacity-50"
-                      >
-                        <span>Select {displayName}</span>
-                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            {/* Transparent Cooperative Escrow & Pricing Assurance Card */}
-            <section className="civic-card p-3.5 space-y-2 bg-[#f2f3ff]">
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[#904d00] text-[20px]">policy</span>
-                <h4 className="text-[13px] font-bold text-on-surface">Federation Fair-Wage Ledger</h4>
-              </div>
-              <p className="text-[11px] text-on-surface-variant leading-snug">
-                Every rupee is recorded in your local cooperative register. Democratic pricing eliminates private intermediary commissions.
+          {(status === "rated" || rating) && (
+            <Card className="p-6 text-center">
+              <span className="size-12 rounded-full bg-success-100 text-success-600 inline-flex items-center justify-center" aria-hidden>
+                <BadgeCheck className="size-6" />
+              </span>
+              <h3 className="mt-3 font-bold text-ink-900">Service completed</h3>
+              <p className="mt-1 text-sm text-ink-500">
+                Thank you for supporting fair-wage cooperative labour.
               </p>
-
-              {/* Split Visualizer */}
-              <div className="space-y-1 pt-1">
-                <div className="h-2.5 w-full rounded-full bg-[#eaedff] overflow-hidden flex">
-                  <div className="bg-[#134e3f] h-full" style={{ width: "82%" }} title="82% Direct Worker Payout"></div>
-                  <div className="bg-[#fe932c] h-full" style={{ width: "10%" }} title="10% Federation Solidarity Reserve"></div>
-                  <div className="bg-[#707975] h-full" style={{ width: "8%" }} title="8% Civic App Infrastructure"></div>
+              {rating && (
+                <div className="mt-3 inline-flex flex-col items-center">
+                  <StarRating rating={rating.rating} size={18} showNumber />
+                  {rating.reviewText && <p className="mt-1.5 text-xs text-ink-500 italic max-w-sm">&ldquo;{rating.reviewText}&rdquo;</p>}
                 </div>
-                <div className="flex items-center justify-between font-mono text-[9px] text-on-surface-variant pt-0.5">
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#134e3f]"></span>
-                    82% Worker
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#fe932c]"></span>
-                    10% Solidarity Fund
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#707975]"></span>
-                    8% Maintenance
-                  </span>
-                </div>
+              )}
+              <div className="mt-5">
+                <Link href="/customer/book" className={buttonClasses({ variant: "secondary", size: "md" })}>
+                  Book another service
+                </Link>
               </div>
-            </section>
+            </Card>
+          )}
 
-            {/* Comparison Footer Notice */}
-            <div className="bg-[#eaedff] border border-[#d1ddd8] rounded-xl p-2.5 flex items-center gap-2 shadow-xs mb-4">
-              <div className="w-7 h-7 rounded-full bg-[#ffdcc3] flex items-center justify-center shrink-0 text-[#904d00]">
-                <span className="material-symbols-outlined text-[16px]">verified_user</span>
-              </div>
-              <p className="text-[11px] text-on-surface-variant leading-tight flex-1">
-                <strong className="text-on-surface font-semibold">Transparent Pricing:</strong> 0% surge charges. All estimates follow Cooperative Federation wage benchmark.
-              </p>
-            </div>
-          </div>
-        ) : (
-          /* ACTIVE ENGAGEMENT & MILESTONE TRACKING VIEW */
-          <div className="flex flex-col gap-3 py-2">
-            {/* Active Engagement Status Header */}
-            <div className="civic-card p-3.5">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#059669] animate-pulse"></span>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#134e3f]">
-                    Engagement In Progress
-                  </span>
-                </div>
-                <StatusBadge status={status} size="sm" />
-              </div>
+          {/* ---------- Timeline ---------- */}
+          {!isQuoting && !isCancelled && (
+            <Card className="p-5 sm:p-6">
+              <h3 className="font-bold text-ink-900 mb-5">Journey</h3>
+              <BookingTimeline status={status} orientation="vertical" />
+            </Card>
+          )}
+        </div>
 
-              <h2 className="text-[14px] font-bold text-on-surface">
-                {category?.name ?? "Service Job"}
-              </h2>
-              <p className="text-[12px] text-on-surface-variant mt-0.5">
-                {booking.serviceDescription}
-              </p>
-              <div className="flex items-center gap-1 mt-2 text-[11px] text-[#707975]">
-                <span className="material-symbols-outlined text-[13px]">location_on</span>
-                <span>{booking.address}</span>
-              </div>
-            </div>
-
-            {/* Assigned Provider Profile */}
-            {providerProfile && (
-              <div className="civic-card p-3.5">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-2">
-                  Assigned Union Specialist
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-[#134e3f] text-white flex items-center justify-center text-[18px] font-bold shrink-0">
-                    {providerProfile.displayName.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[14px] text-on-surface truncate">
-                      {providerProfile.displayName}
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] text-on-surface-variant">
-                      <span className="material-symbols-outlined text-[14px] text-[#904d00]">star</span>
-                      <span>{providerProfile.ratingAvg ?? "4.9"} ({providerProfile.ratingCount ?? 42} reviews)</span>
-                      <span>•</span>
-                      <span>{providerProfile.experience ?? 8}y exp</span>
-                    </div>
-                    <div className="inline-flex items-center gap-1 mt-1 text-[10px] bg-[#b5efda] text-[#002018] px-2 py-0.2 rounded-md font-semibold">
-                      <span className="material-symbols-outlined text-[12px]">verified</span>
-                      Cooperative Member-Owner
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 mt-3 pt-2 border-t border-[#eaedff]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const pId = booking.providerId || providerProfile?.id || (quotes[0]?.quote?.providerId) || "";
-                      router.push(`/customer/messages?bookingId=${id}&providerId=${pId}`);
-                    }}
-                    className="flex-1 py-2 rounded-xl bg-[#f2f3ff] text-on-surface text-[12px] font-semibold flex items-center justify-center gap-1.5 border border-[#d1ddd8] hover:bg-[#eaedff]"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">chat</span>
-                    Chat
-                  </button>
-                  <a
-                    href="tel:9200000001"
-                    className="flex-1 py-2 rounded-xl bg-[#f2f3ff] text-on-surface text-[12px] font-semibold flex items-center justify-center gap-1.5 border border-[#d1ddd8] hover:bg-[#eaedff]"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">call</span>
-                    Call
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* Pending Mutual Confirmations */}
-            {status === "arrived_pending_confirmation" && (
-              <div className="p-3.5 rounded-2xl bg-[#ffdcc3] border border-[#fe932c] space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#904d00] text-[20px]">pin_drop</span>
-                  <div className="text-[13px] font-bold text-[#2f1500]">Specialist Has Arrived</div>
-                </div>
-                <p className="text-[11px] text-[#6e3900]">
-                  Please confirm that the cooperative technician has reached your location.
-                </p>
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => performAction("confirm_arrival")}
-                  className="w-full py-2.5 bg-[#904d00] text-white rounded-xl text-[12px] font-bold shadow-xs active:scale-95 transition-all"
-                >
-                  Confirm Arrival on Site
-                </button>
-              </div>
-            )}
-
-            {status === "price_change_pending" && latestRevision && (
-              <div className="p-3.5 rounded-2xl bg-[#ffdcc3] border border-[#fe932c] space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#904d00] text-[20px]">warning</span>
-                  <div className="text-[13px] font-bold text-[#2f1500]">Price Revision Requested</div>
-                </div>
-                <p className="text-[11px] text-[#6e3900]">
-                  Reason: {latestRevision.reason}
-                </p>
-                <div className="bg-white p-2.5 rounded-xl border border-[#d1ddd8] space-y-1 text-[12px]">
-                  <div className="flex justify-between">
-                    <span className="text-on-surface-variant">Original Estimate:</span>
-                    <span>₹{latestRevision.originalAmount}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-[#904d00]">
-                    <span>Revised Amount:</span>
-                    <span>₹{latestRevision.proposedAmount}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={actionLoading}
-                    onClick={() => performAction("approve_price_change", { proposedAmount: latestRevision.proposedAmount })}
-                    className="flex-1 py-2 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold"
-                  >
-                    Accept New Price
-                  </button>
-                  <button
-                    type="button"
-                    disabled={actionLoading}
-                    onClick={() => performAction("reject_price_change")}
-                    className="py-2 px-3 bg-[#ffdad6] text-[#ba1a1a] rounded-xl text-[12px] font-bold"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {status === "completed_pending_confirmation" && (
-              <div className="p-3.5 rounded-2xl bg-[#b5efda] border border-[#059669] space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#003724] text-[20px]">check_circle</span>
-                  <div className="text-[13px] font-bold text-[#002018]">Work Completed by Specialist</div>
-                </div>
-                <p className="text-[11px] text-[#005036]">
-                  Please verify that the repair was inspected and completed to your satisfaction.
-                </p>
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => performAction("confirm_completion")}
-                  className="w-full py-2.5 bg-[#003724] text-white rounded-xl text-[12px] font-bold shadow-xs active:scale-95 transition-all"
-                >
-                  Confirm & Release to Settlement
-                </button>
-              </div>
-            )}
-
-            {/* Settlement / Escrow Payment */}
-            {status === "completed" && !payment && (
-              <div className="civic-card p-3.5 space-y-3">
-                <div className="text-[13px] font-bold text-on-surface">Escrow Settlement</div>
-                <div className="flex items-center justify-between p-2.5 bg-[#f2f3ff] rounded-xl border border-[#d1ddd8]">
-                  <span className="text-[12px] text-on-surface-variant">Payable Amount:</span>
-                  <span className="font-mono text-[16px] font-bold text-[#134e3f]">
-                    ₹{booking.totalAmount || booking.finalPrice || "350"}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("online")}
-                    className={`flex-1 py-2 rounded-xl text-[12px] font-semibold border ${
-                      paymentMethod === "online" ? "bg-[#134e3f] text-white" : "bg-white border-[#d1ddd8]"
-                    }`}
-                  >
-                    UPI / Escrow
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("cash")}
-                    className={`flex-1 py-2 rounded-xl text-[12px] font-semibold border ${
-                      paymentMethod === "cash" ? "bg-[#134e3f] text-white" : "bg-white border-[#d1ddd8]"
-                    }`}
-                  >
-                    Cash on Spot
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => performAction("record_payment", { method: paymentMethod, amount: booking.totalAmount || "350" })}
-                  className="w-full h-11 bg-[#134e3f] text-white rounded-xl text-[13px] font-bold flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
-                >
-                  <span className="material-symbols-outlined text-[18px]">payments</span>
-                  <span>Confirm Settlement</span>
-                </button>
-              </div>
-            )}
-
-            {/* Rating Section */}
-            {status === "paid" && !rating && (
-              <div className="civic-card p-3.5 space-y-2.5">
-                <div className="text-[13px] font-bold text-on-surface">Rate Cooperative Specialist</div>
-                <p className="text-[11px] text-on-surface-variant">
-                  Your feedback helps maintain high democratic standards across the federation.
-                </p>
-                <div className="flex justify-center py-1">
-                  <StarRating rating={ratingVal} onRate={setRatingVal} size={28} />
-                </div>
-                <textarea
-                  rows={2}
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="Share a short review..."
-                  className="w-full p-2.5 rounded-xl border border-[#d1ddd8] text-[12px] focus:outline-none focus:border-[#134e3f]"
-                />
-                <button
-                  type="button"
-                  disabled={actionLoading}
-                  onClick={() => performAction("submit_rating", { rating: ratingVal, reviewText })}
-                  className="w-full py-2 bg-[#134e3f] text-white rounded-xl text-[12px] font-bold shadow-xs"
-                >
-                  Submit Review
-                </button>
-              </div>
-            )}
-
-            {/* Completed Receipt Card */}
-            {(status === "rated" || rating) && (
-              <div className="civic-card p-3.5 bg-[#f2f3ff] space-y-2 text-center">
-                <span className="material-symbols-outlined text-[32px] text-[#059669]">verified</span>
-                <div className="text-[14px] font-bold text-[#134e3f]">Service Successfully Completed</div>
-                <p className="text-[11px] text-on-surface-variant">
-                  Thank you for supporting democratic labour cooperatives and fair-wage artisans.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* Floating Selection Confirmation Toast Overlay */}
-      {toastMessage && (
-        <div className="fixed bottom-20 left-4 right-4 z-50 max-w-md mx-auto bg-[#134e3f] text-white p-3.5 rounded-2xl shadow-2xl border border-[#b5efda]/30 animate-slide-up">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="material-symbols-outlined text-[#85f8c4] text-[24px] shrink-0">
-                check_circle
+        {/* ================================================= Side column */}
+        <div className="space-y-5 lg:sticky lg:top-20">
+          <Card className="p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-ink-400 mb-4">Booking summary</p>
+            <div className="flex items-start gap-3">
+              <span className="size-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0" aria-hidden>
+                <ServiceIcon category={category?.name} size={20} />
               </span>
               <div className="min-w-0">
-                <p className="text-[13px] font-bold truncate">{toastMessage.title}</p>
-                <p className="text-[11px] text-[#86beab] truncate">{toastMessage.desc}</p>
+                <p className="text-sm font-bold text-ink-900 leading-snug">{category?.name ?? "Service"}</p>
+                {service && <p className="text-xs text-ink-500 mt-0.5">{service.name}</p>}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setToastMessage(null)}
-              className="px-3 py-1 bg-[#fe932c] text-[#663500] rounded-lg text-[11px] font-bold shrink-0 shadow-xs active:scale-95 transition-all"
-            >
-              Close
-            </button>
+            <dl className="mt-4 space-y-3 text-sm">
+              <SummaryRow label="Service at" value={booking.address} icon={<MapPin className="size-4" />} />
+              <SummaryRow
+                label="Requested"
+                value={formatDateTime(booking.createdAt)}
+                icon={<CalendarDays className="size-4" />}
+              />
+              {booking.preferredTime && !booking.isEmergency && (
+                <SummaryRow
+                  label="Preferred"
+                  value={formatDateTime(booking.preferredTime)}
+                  icon={<CalendarDays className="size-4" />}
+                />
+              )}
+              {(booking.finalPrice || booking.totalAmount) && (
+                <div className="pt-3 border-t border-line flex items-center justify-between">
+                  <span className="text-ink-500">Amount</span>
+                  <span className="font-extrabold text-ink-900 tabular-nums">
+                    {formatINR(booking.totalAmount || booking.finalPrice)}
+                  </span>
+                </div>
+              )}
+              {payment && (
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-500">Payment</span>
+                  <span className="font-semibold text-ink-800 capitalize">{payment.method} • {payment.status.replace(/_/g, " ")}</span>
+                </div>
+              )}
+              {invoice && (
+                <div className="flex items-center justify-between">
+                  <span className="text-ink-500">Invoice</span>
+                  <span className="font-mono text-xs text-ink-700">{invoice.invoiceNumber}</span>
+                </div>
+              )}
+            </dl>
+
+            {/* Attachments */}
+            {booking.mediaUrls && booking.mediaUrls.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-line">
+                <p className="text-xs font-bold text-ink-700 mb-2.5">Attachments</p>
+                <div className="flex flex-wrap gap-2">
+                  {booking.mediaUrls.map((url, idx) => {
+                    const isAudio = url.startsWith("data:audio") || /\.(mp3|wav|ogg|webm|m4a)/i.test(url);
+                    if (isAudio) {
+                      return (
+                        <div key={idx} className="w-full rounded-xl bg-ink-50 border border-line p-2.5">
+                          <p className="text-2xs font-bold text-ink-700 mb-1">Voice note</p>
+                          <audio src={url} controls className="w-full h-8" />
+                        </div>
+                      );
+                    }
+                    return (
+                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block size-16 rounded-xl overflow-hidden border border-line">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`Attachment ${idx + 1}`} className="w-full h-full object-cover" />
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Journey timeline compact for quoting state */}
+          {isQuoting && !isCancelled && (
+            <Card className="p-5 sm:p-6">
+              <h3 className="font-bold text-ink-900 mb-5">Journey</h3>
+              <BookingTimeline status={status} orientation="vertical" />
+            </Card>
+          )}
+
+          <div className="rounded-2xl border border-line bg-panel p-4 flex items-center gap-3">
+            <span className="size-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0" aria-hidden>
+              <Phone className="size-4.5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-ink-900">Need help with this order?</p>
+              <p className="text-xs text-ink-400">Society helpdesk</p>
+            </div>
+            <a href="tel:18004198800" className={buttonClasses({ variant: "secondary", size: "sm" })}>
+              Call
+            </a>
           </div>
         </div>
+      </div>
+
+      {toastMessage && (
+        <Toast
+          message={
+            <span>
+              <strong>{toastMessage.title}.</strong> {toastMessage.desc}
+            </span>
+          }
+          onDismiss={() => setToastMessage(null)}
+        />
       )}
+    </PageContainer>
+  );
+}
+
+function SummaryRow({ label, value, icon }: { label: string; value?: string | null; icon: React.ReactNode }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className="text-accent-600 mt-0.5 shrink-0" aria-hidden>{icon}</span>
+      <div className="min-w-0">
+        <dt className="text-2xs text-ink-400">{label}</dt>
+        <dd className="font-semibold text-ink-800 leading-snug break-words">{value}</dd>
+      </div>
     </div>
+  );
+}
+
+function ActionPanel({
+  intent,
+  title,
+  body,
+  children,
+}: {
+  intent: "warning" | "success";
+  title: string;
+  body: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const styles = {
+    warning: "border-warning-300 bg-warning-50",
+    success: "border-success-300 bg-success-50",
+  } as const;
+  return (
+    <Card className={cn("p-5 border", styles[intent])}>
+      <h3 className="font-bold text-ink-900">{title}</h3>
+      <p className="text-sm text-ink-700 mt-1.5 mb-4 leading-relaxed">{body}</p>
+      {children}
+    </Card>
   );
 }

@@ -242,8 +242,8 @@ export default function AdminSettingsPage() {
       desc: "Manage service categories and specific services. Add, edit or deactivate services.",
       icon: BookOpen,
       badge: `${categories.length} Categories`,
-      badgeColor: "bg-blue-100 text-blue-700",
-      color: "bg-blue-50 text-blue-600 border-blue-200",
+      badgeColor: "bg-brand-100 text-brand-700",
+      color: "bg-brand-50 text-brand-600 border-brand-200",
     },
     {
       id: "fees" as ActiveModal,
@@ -269,8 +269,8 @@ export default function AdminSettingsPage() {
       desc: "Manage geographic service boundaries, pincodes and society coverage zones.",
       icon: MapPin,
       badge: `${serviceAreas.length} Active Zones`,
-      badgeColor: "bg-violet-100 text-violet-700",
-      color: "bg-violet-50 text-violet-600 border-violet-200",
+      badgeColor: "bg-brand-100 text-brand-700",
+      color: "bg-brand-50 text-brand-600 border-brand-200",
     },
     {
       id: "permissions" as ActiveModal,
@@ -297,8 +297,8 @@ export default function AdminSettingsPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Settings & Governance</h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-ink-900">Settings & Governance</h1>
+          <p className="text-ink-500 text-sm mt-1">
             Platform configuration, cooperative fee setting, service catalogs and permissions
           </p>
         </div>
@@ -318,7 +318,7 @@ export default function AdminSettingsPage() {
             <div
               key={card.id}
               onClick={() => setActiveModal(card.id)}
-              className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+              className="group bg-white rounded-2xl p-6 shadow-sm border border-ink-200 hover:border-brand-400 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -329,13 +329,13 @@ export default function AdminSettingsPage() {
                     {card.badge}
                   </span>
                 </div>
-                <h3 className="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors mb-1.5">
+                <h3 className="font-bold text-lg text-ink-900 group-hover:text-brand-600 transition-colors mb-1.5">
                   {card.title}
                 </h3>
-                <p className="text-sm text-slate-500 leading-relaxed mb-4">{card.desc}</p>
+                <p className="text-sm text-ink-500 leading-relaxed mb-4">{card.desc}</p>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-blue-600 group-hover:translate-x-1 transition-transform">
+              <div className="pt-3 border-t border-ink-100 flex items-center justify-between text-xs font-semibold text-brand-600 group-hover:translate-x-1 transition-transform">
                 <span>Configure & Manage</span>
                 <ArrowRight size={14} />
               </div>
@@ -348,32 +348,32 @@ export default function AdminSettingsPage() {
       {/* MODAL 1: SERVICE CATALOG */}
       {/* ========================================================================= */}
       {activeModal === "catalog" && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
                   <BookOpen size={20} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Service Catalog Management</h2>
-                  <p className="text-xs text-slate-500">Configure trade categories and enable/disable services</p>
+                  <h2 className="text-xl font-bold text-ink-900">Service Catalog Management</h2>
+                  <p className="text-xs text-ink-500">Configure trade categories and enable/disable services</p>
                 </div>
               </div>
-              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
               {/* Add New Category */}
-              <form onSubmit={handleAddCategory} className="bg-blue-50/60 border border-blue-200/80 rounded-2xl p-4">
-                <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+              <form onSubmit={handleAddCategory} className="bg-brand-50/60 border border-brand-200/80 rounded-2xl p-4">
+                <h4 className="text-sm font-bold text-brand-900 mb-3 flex items-center gap-2">
                   <Plus size={16} /> Add New Service Category
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-700">Icon Emoji</label>
+                    <label className="text-xs font-semibold text-ink-700">Icon Emoji</label>
                     <input
                       type="text"
                       value={newCatIcon}
@@ -383,7 +383,7 @@ export default function AdminSettingsPage() {
                     />
                   </div>
                   <div className="sm:col-span-3">
-                    <label className="text-xs font-semibold text-slate-700">Trade Name</label>
+                    <label className="text-xs font-semibold text-ink-700">Trade Name</label>
                     <input
                       type="text"
                       placeholder="e.g., Solar Panel Technician"
@@ -404,7 +404,7 @@ export default function AdminSettingsPage() {
                   />
                   <button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors flex items-center gap-1.5 shadow-sm"
+                    className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors flex items-center gap-1.5 shadow-sm"
                   >
                     <Plus size={16} /> Add Category
                   </button>
@@ -413,13 +413,13 @@ export default function AdminSettingsPage() {
 
               {/* Search */}
               <div className="relative">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
                 <input
                   type="text"
                   placeholder="Search categories (Plumbing, Electrical, Carpentry...)"
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2.5 border border-ink-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
@@ -433,23 +433,23 @@ export default function AdminSettingsPage() {
                       <div
                         key={cat.id}
                         className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
-                          active ? "bg-white border-slate-200" : "bg-slate-50 border-slate-200/60 opacity-60"
+                          active ? "bg-white border-ink-200" : "bg-ink-50 border-ink-200/60 opacity-60"
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl p-1.5 bg-slate-100 rounded-xl">{cat.icon || "🔧"}</span>
+                          <span className="text-2xl p-1.5 bg-ink-100 rounded-xl">{cat.icon || "🔧"}</span>
                           <div>
-                            <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <div className="font-bold text-ink-900 text-sm flex items-center gap-2">
                               {cat.name}
                               <span
                                 className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                                  active ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"
+                                  active ? "bg-green-100 text-green-700" : "bg-ink-200 text-ink-600"
                                 }`}
                               >
                                 {active ? "Active" : "Disabled"}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-500 line-clamp-1">{cat.description || "Cooperative service"}</p>
+                            <p className="text-xs text-ink-500 line-clamp-1">{cat.description || "Cooperative service"}</p>
                           </div>
                         </div>
 
@@ -457,8 +457,8 @@ export default function AdminSettingsPage() {
                           onClick={() => handleToggleCategory(cat.id)}
                           className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors ${
                             active
-                              ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                              ? "bg-ink-100 text-ink-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+                              : "bg-brand-50 text-brand-700 border-brand-200 hover:bg-brand-100"
                           }`}
                         >
                           {active ? "Deactivate" : "Activate"}
@@ -469,13 +469,13 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex justify-end">
               <button
                 onClick={() => {
                   triggerToast("Service catalog preferences saved!");
                   setActiveModal(null);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-sm"
+                className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-sm"
               >
                 Done
               </button>
@@ -488,19 +488,19 @@ export default function AdminSettingsPage() {
       {/* MODAL 2: FEE CONFIGURATION */}
       {/* ========================================================================= */}
       {activeModal === "fees" && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
                   <DollarSign size={20} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Cooperative Fee Configuration</h2>
-                  <p className="text-xs text-slate-500">Set transparent platform fees and worker welfare funds</p>
+                  <h2 className="text-xl font-bold text-ink-900">Cooperative Fee Configuration</h2>
+                  <p className="text-xs text-ink-500">Set transparent platform fees and worker welfare funds</p>
                 </div>
               </div>
-              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
@@ -510,8 +510,8 @@ export default function AdminSettingsPage() {
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm font-semibold text-slate-800">Platform Maintenance Fee</label>
-                    <span className="font-bold text-blue-600 text-sm">{feeConfig.platformFeePct}%</span>
+                    <label className="text-sm font-semibold text-ink-800">Platform Maintenance Fee</label>
+                    <span className="font-bold text-brand-600 text-sm">{feeConfig.platformFeePct}%</span>
                   </div>
                   <input
                     type="range"
@@ -520,14 +520,14 @@ export default function AdminSettingsPage() {
                     step="1"
                     value={feeConfig.platformFeePct}
                     onChange={(e) => setFeeConfig({ ...feeConfig, platformFeePct: Number(e.target.value) })}
-                    className="w-full accent-blue-600"
+                    className="w-full accent-brand-600"
                   />
-                  <p className="text-xs text-slate-400">Covers digital server hosting, SMS gateways and call dispatch.</p>
+                  <p className="text-xs text-ink-400">Covers digital server hosting, SMS gateways and call dispatch.</p>
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm font-semibold text-slate-800">Worker Welfare & Insurance Fund</label>
+                    <label className="text-sm font-semibold text-ink-800">Worker Welfare & Insurance Fund</label>
                     <span className="font-bold text-emerald-600 text-sm">{feeConfig.welfareFundPct}%</span>
                   </div>
                   <input
@@ -539,12 +539,12 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setFeeConfig({ ...feeConfig, welfareFundPct: Number(e.target.value) })}
                     className="w-full accent-emerald-600"
                   />
-                  <p className="text-xs text-slate-400">Deposited directly into provider health insurance & pension corpus.</p>
+                  <p className="text-xs text-ink-400">Deposited directly into provider health insurance & pension corpus.</p>
                 </div>
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm font-semibold text-slate-800">Local Society Administrative Levy</label>
+                    <label className="text-sm font-semibold text-ink-800">Local Society Administrative Levy</label>
                     <span className="font-bold text-amber-600 text-sm">{feeConfig.societyAdminPct}%</span>
                   </div>
                   <input
@@ -556,14 +556,14 @@ export default function AdminSettingsPage() {
                     onChange={(e) => setFeeConfig({ ...feeConfig, societyAdminPct: Number(e.target.value) })}
                     className="w-full accent-amber-600"
                   />
-                  <p className="text-xs text-slate-400">Allocated to the local registered society for physical tool pooling.</p>
+                  <p className="text-xs text-ink-400">Allocated to the local registered society for physical tool pooling.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div>
-                    <label className="text-xs font-semibold text-slate-700">Minimum Visit Baseline Fee</label>
+                    <label className="text-xs font-semibold text-ink-700">Minimum Visit Baseline Fee</label>
                     <div className="relative mt-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">₹</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500 text-sm">₹</span>
                       <input
                         type="number"
                         value={feeConfig.minVisitFee}
@@ -573,7 +573,7 @@ export default function AdminSettingsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700">Emergency Job Multiplier</label>
+                    <label className="text-xs font-semibold text-ink-700">Emergency Job Multiplier</label>
                     <div className="relative mt-1">
                       <input
                         type="number"
@@ -590,24 +590,24 @@ export default function AdminSettingsPage() {
               </div>
 
               {/* Dynamic Live Transparency Calculator */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+              <div className="bg-ink-50 border border-ink-200 rounded-2xl p-4">
+                <h4 className="text-xs font-bold text-ink-600 uppercase tracking-wider mb-3">
                   Live Transparency Model (₹1,000 Booking)
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex justify-between items-center text-ink-600">
                     <span>Provider Member Take-home</span>
                     <span className="font-bold text-green-700">₹{providerTakehome.toFixed(0)} ({100 - (feeConfig.platformFeePct + feeConfig.welfareFundPct + feeConfig.societyAdminPct)}%)</span>
                   </div>
-                  <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex justify-between items-center text-ink-600">
                     <span>Platform Operations ({feeConfig.platformFeePct}%)</span>
-                    <span className="font-semibold text-blue-700">₹{platformFee.toFixed(0)}</span>
+                    <span className="font-semibold text-brand-700">₹{platformFee.toFixed(0)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex justify-between items-center text-ink-600">
                     <span>Welfare & Health Pool ({feeConfig.welfareFundPct}%)</span>
                     <span className="font-semibold text-emerald-700">₹{welfareFee.toFixed(0)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex justify-between items-center text-ink-600">
                     <span>Society Administrative ({feeConfig.societyAdminPct}%)</span>
                     <span className="font-semibold text-amber-700">₹{societyFee.toFixed(0)}</span>
                   </div>
@@ -615,8 +615,8 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-200">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex justify-end gap-3">
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-ink-600 hover:bg-ink-200">
                 Cancel
               </button>
               <button
@@ -638,19 +638,19 @@ export default function AdminSettingsPage() {
       {/* MODAL 3: NOTIFICATION RULES */}
       {/* ========================================================================= */}
       {activeModal === "notifications" && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
                   <Bell size={20} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Notification & Alert Rules</h2>
-                  <p className="text-xs text-slate-500">Automate customer alerts and emergency broadcasts</p>
+                  <h2 className="text-xl font-bold text-ink-900">Notification & Alert Rules</h2>
+                  <p className="text-xs text-ink-500">Automate customer alerts and emergency broadcasts</p>
                 </div>
               </div>
-              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
@@ -683,15 +683,15 @@ export default function AdminSettingsPage() {
                   onClick={() =>
                     setNotificationRules({ ...notificationRules, [item.key]: !notificationRules[item.key] })
                   }
-                  className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 hover:border-blue-300 transition-colors cursor-pointer bg-white"
+                  className="flex items-center justify-between p-4 rounded-2xl border border-ink-200 hover:border-brand-300 transition-colors cursor-pointer bg-white"
                 >
                   <div className="pr-4">
-                    <div className="font-bold text-slate-900 text-sm">{item.title}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{item.desc}</div>
+                    <div className="font-bold text-ink-900 text-sm">{item.title}</div>
+                    <div className="text-xs text-ink-500 mt-0.5">{item.desc}</div>
                   </div>
                   <div
                     className={`w-12 h-6 rounded-full transition-colors flex items-center px-1 flex-shrink-0 ${
-                      notificationRules[item.key] ? "bg-blue-600 justify-end" : "bg-slate-300 justify-start"
+                      notificationRules[item.key] ? "bg-brand-600 justify-end" : "bg-ink-300 justify-start"
                     }`}
                   >
                     <div className="w-4 h-4 rounded-full bg-white shadow-sm" />
@@ -700,7 +700,7 @@ export default function AdminSettingsPage() {
               ))}
 
               <div className="pt-2">
-                <label className="text-xs font-semibold text-slate-700">Provider Arrival Advance Reminder</label>
+                <label className="text-xs font-semibold text-ink-700">Provider Arrival Advance Reminder</label>
                 <select
                   value={notificationRules.arrivalReminderMins}
                   onChange={(e) =>
@@ -715,8 +715,8 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-200">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex justify-end gap-3">
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-ink-600 hover:bg-ink-200">
                 Cancel
               </button>
               <button
@@ -725,7 +725,7 @@ export default function AdminSettingsPage() {
                   await handleSaveSettings({ notificationRules }, "Notification triggers updated");
                   setActiveModal(null);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-sm flex items-center gap-2"
+                className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-sm flex items-center gap-2"
               >
                 <Save size={16} /> Save Rules
               </button>
@@ -738,27 +738,27 @@ export default function AdminSettingsPage() {
       {/* MODAL 4: SERVICE AREAS */}
       {/* ========================================================================= */}
       {activeModal === "areas" && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
                   <MapPin size={20} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Service Areas & Jurisdictions</h2>
-                  <p className="text-xs text-slate-500">Manage cooperative society boundaries and covered pincodes</p>
+                  <h2 className="text-xl font-bold text-ink-900">Service Areas & Jurisdictions</h2>
+                  <p className="text-xs text-ink-500">Manage cooperative society boundaries and covered pincodes</p>
                 </div>
               </div>
-              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-5 flex-1">
               {/* Add Zone */}
-              <form onSubmit={handleAddServiceArea} className="bg-violet-50/70 border border-violet-200 rounded-2xl p-4">
-                <h4 className="text-xs font-bold text-violet-900 uppercase tracking-wider mb-2.5">
+              <form onSubmit={handleAddServiceArea} className="bg-brand-50/70 border border-brand-200 rounded-2xl p-4">
+                <h4 className="text-xs font-bold text-brand-900 uppercase tracking-wider mb-2.5">
                   Register New Society Jurisdiction
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2.5">
@@ -792,7 +792,7 @@ export default function AdminSettingsPage() {
                 </div>
                 <button
                   type="submit"
-                  className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
                 >
                   <Plus size={14} /> Add Zone
                 </button>
@@ -801,12 +801,12 @@ export default function AdminSettingsPage() {
               {/* Area List */}
               <div className="space-y-3">
                 {serviceAreas.map((area) => (
-                  <div key={area.id} className="p-4 rounded-2xl border border-slate-200 bg-white">
+                  <div key={area.id} className="p-4 rounded-2xl border border-ink-200 bg-white">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                        <Building size={16} className="text-violet-600" />
+                      <div className="font-bold text-ink-900 text-sm flex items-center gap-2">
+                        <Building size={16} className="text-brand-600" />
                         {area.name}
-                        <span className="text-[10px] bg-violet-100 text-violet-800 font-semibold px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] bg-brand-100 text-brand-800 font-semibold px-2 py-0.5 rounded-full">
                           {area.district}
                         </span>
                       </div>
@@ -816,24 +816,24 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      <span className="text-xs text-slate-500 font-medium">Covered Pincodes:</span>
+                      <span className="text-xs text-ink-500 font-medium">Covered Pincodes:</span>
                       {area.pincodes.map((pin) => (
-                        <span key={pin} className="text-xs bg-slate-100 px-2 py-0.5 rounded-md font-mono text-slate-700">
+                        <span key={pin} className="text-xs bg-ink-100 px-2 py-0.5 rounded-md font-mono text-ink-700">
                           {pin}
                         </span>
                       ))}
                     </div>
 
-                    <div className="text-xs text-slate-400">
-                      Dispatched within a maximum radius of <strong className="text-slate-700">{area.radiusKm} km</strong>.
+                    <div className="text-xs text-ink-400">
+                      Dispatched within a maximum radius of <strong className="text-ink-700">{area.radiusKm} km</strong>.
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-              <button onClick={() => setActiveModal(null)} className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-sm">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex justify-end">
+              <button onClick={() => setActiveModal(null)} className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-sm">
                 Done
               </button>
             </div>
@@ -845,27 +845,27 @@ export default function AdminSettingsPage() {
       {/* MODAL 5: ROLE PERMISSIONS */}
       {/* ========================================================================= */}
       {activeModal === "permissions" && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Governance & Role Permissions</h2>
-                  <p className="text-xs text-slate-500">Fine-tune authority between Society Admins and Federation Officials</p>
+                  <h2 className="text-xl font-bold text-ink-900">Governance & Role Permissions</h2>
+                  <p className="text-xs text-ink-500">Fine-tune authority between Society Admins and Federation Officials</p>
                 </div>
               </div>
-              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
               <div>
-                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <Building size={16} className="text-blue-600" /> Society Administrator Authority
+                <h4 className="text-sm font-bold text-ink-900 mb-3 flex items-center gap-2">
+                  <Building size={16} className="text-brand-600" /> Society Administrator Authority
                 </h4>
                 <div className="space-y-2">
                   {[
@@ -887,12 +887,12 @@ export default function AdminSettingsPage() {
                             },
                           })
                         }
-                        className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                        className="flex items-center justify-between p-3 rounded-xl border border-ink-200 hover:bg-ink-50 transition-colors cursor-pointer"
                       >
-                        <span className="text-sm text-slate-700">{p.label}</span>
+                        <span className="text-sm text-ink-700">{p.label}</span>
                         <div
                           className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
-                            active ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 bg-white"
+                            active ? "bg-brand-600 border-brand-600 text-white" : "border-ink-300 bg-white"
                           }`}
                         >
                           {active && <Check size={14} />}
@@ -904,7 +904,7 @@ export default function AdminSettingsPage() {
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-bold text-ink-900 mb-3 flex items-center gap-2">
                   <ShieldCheck size={16} className="text-indigo-600" /> Federation Official High Authority
                 </h4>
                 <div className="space-y-2">
@@ -926,12 +926,12 @@ export default function AdminSettingsPage() {
                             },
                           })
                         }
-                        className="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                        className="flex items-center justify-between p-3 rounded-xl border border-ink-200 hover:bg-ink-50 transition-colors cursor-pointer"
                       >
-                        <span className="text-sm text-slate-700">{p.label}</span>
+                        <span className="text-sm text-ink-700">{p.label}</span>
                         <div
                           className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
-                            active ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 bg-white"
+                            active ? "bg-indigo-600 border-indigo-600 text-white" : "border-ink-300 bg-white"
                           }`}
                         >
                           {active && <Check size={14} />}
@@ -943,8 +943,8 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-200">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex justify-end gap-3">
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-ink-600 hover:bg-ink-200">
                 Cancel
               </button>
               <button
@@ -966,26 +966,26 @@ export default function AdminSettingsPage() {
       {/* MODAL 6: INTEGRATION SETTINGS */}
       {/* ========================================================================= */}
       {activeModal === "integrations" && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-ink-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="p-6 border-b border-ink-100 flex items-center justify-between bg-ink-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center">
                   <Link2 size={20} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Integration Gateways</h2>
-                  <p className="text-xs text-slate-500">Configure payment gateways, map providers and SMS routes</p>
+                  <h2 className="text-xl font-bold text-ink-900">Integration Gateways</h2>
+                  <p className="text-xs text-ink-500">Configure payment gateways, map providers and SMS routes</p>
                 </div>
               </div>
-              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-ink-200 rounded-full text-ink-500">
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
               <div>
-                <label className="text-xs font-semibold text-slate-700">Payment Gateway Routing</label>
+                <label className="text-xs font-semibold text-ink-700">Payment Gateway Routing</label>
                 <select
                   value={integrations.paymentGateway}
                   onChange={(e) => setIntegrations({ ...integrations, paymentGateway: e.target.value })}
@@ -998,7 +998,7 @@ export default function AdminSettingsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700">Identity Verification Sandbox</label>
+                <label className="text-xs font-semibold text-ink-700">Identity Verification Sandbox</label>
                 <select
                   value={integrations.identityVerification}
                   onChange={(e) => setIntegrations({ ...integrations, identityVerification: e.target.value })}
@@ -1010,7 +1010,7 @@ export default function AdminSettingsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700">Map & Geocoding Service</label>
+                <label className="text-xs font-semibold text-ink-700">Map & Geocoding Service</label>
                 <select
                   value={integrations.mapsProvider}
                   onChange={(e) => setIntegrations({ ...integrations, mapsProvider: e.target.value })}
@@ -1027,7 +1027,7 @@ export default function AdminSettingsPage() {
                   type="button"
                   onClick={runConnectionTest}
                   disabled={testing}
-                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors border border-slate-200"
+                  className="w-full py-2.5 px-4 bg-ink-100 hover:bg-ink-200 text-ink-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors border border-ink-200"
                 >
                   <RefreshCw size={14} className={testing ? "animate-spin" : ""} />
                   {testing ? "Testing Gateway Handshakes..." : "Test Connection to All Gateways"}
@@ -1041,8 +1041,8 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-200">
+            <div className="p-4 border-t border-ink-100 bg-ink-50 flex justify-end gap-3">
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-ink-600 hover:bg-ink-200">
                 Cancel
               </button>
               <button

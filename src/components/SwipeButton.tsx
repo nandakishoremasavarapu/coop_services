@@ -1,67 +1,94 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { ChevronsRight } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 interface SwipeButtonProps {
   label: string;
   onComplete: () => void;
-  color?: string;
+  tone?: "brand" | "accent" | "success";
   disabled?: boolean;
   icon?: React.ReactNode;
 }
 
-export function SwipeButton({ label, onComplete, color = "#1a56db", disabled = false, icon }: SwipeButtonProps) {
+const TONE_CLASSES: Record<NonNullable<SwipeButtonProps["tone"]>, { track: string; thumb: string; text: string }> = {
+  brand: { track: "bg-brand-50 border-brand-200", thumb: "bg-brand-700", text: "text-brand-800" },
+  accent: { track: "bg-accent-50 border-accent-200", thumb: "bg-accent-500", text: "text-accent-700" },
+  success: { track: "bg-success-100 border-success-300", thumb: "bg-success-600", text: "text-success-700" },
+};
+
+/** Slide-to-confirm control for irreversible on-site job actions. */
+export function SwipeButton({ label, onComplete, tone = "brand", disabled = false, icon }: SwipeButtonProps) {
   const [progress, setProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(240);
+  const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
+  const progressRef = useRef(0);
 
   useEffect(() => {
-    if (containerRef.current) {
-      setContainerWidth(containerRef.current.offsetWidth);
-    }
+    progressRef.current = progress;
+  }, [progress]);
+
+  const measure = useCallback(() => {
+    setContainerWidth(containerRef.current?.offsetWidth ?? 0);
   }, []);
+
+  // Track container size for thumb positioning.
+  useEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
 
   const handleStart = (clientX: number) => {
     if (disabled || completed) return;
+    measure();
     setIsDragging(true);
     startXRef.current = clientX;
-    if (containerRef.current) {
-      setContainerWidth(containerRef.current.offsetWidth);
-    }
   };
 
   const handleMove = (clientX: number) => {
     if (!isDragging || !containerRef.current) return;
-    const width = containerRef.current.offsetWidth || containerWidth;
-    const thumbWidth = 56;
+    const width = containerRef.current.offsetWidth;
+    const thumbWidth = 48;
     const maxTravel = width - thumbWidth - 8;
     const delta = clientX - startXRef.current;
     const newProgress = Math.max(0, Math.min(1, delta / maxTravel));
+    progressRef.current = newProgress;
     setProgress(newProgress);
   };
 
   const handleEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
-    if (progress >= 0.85) {
+    if (progressRef.current >= 0.85) {
       setCompleted(true);
       setProgress(1);
-      setTimeout(() => {
-        onComplete();
-      }, 300);
+      setTimeout(() => onComplete(), 250);
     } else {
+      progressRef.current = 0;
       setProgress(0);
     }
   };
 
+  const toneClasses = TONE_CLASSES[tone];
+
   return (
     <div
       ref={containerRef}
-      className="relative h-14 rounded-full overflow-hidden select-none"
-      style={{ background: `${color}22`, border: `2px solid ${color}44` }}
+      role="slider"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(progress * 100)}
+      aria-disabled={disabled}
+      className={cn(
+        "relative h-14 rounded-2xl border-2 overflow-hidden select-none [touch-action:pan-y]",
+        toneClasses.track,
+        disabled && "opacity-50 pointer-events-none"
+      )}
       onMouseDown={(e) => handleStart(e.clientX)}
       onMouseMove={(e) => handleMove(e.clientX)}
       onMouseUp={handleEnd}
@@ -70,31 +97,35 @@ export function SwipeButton({ label, onComplete, color = "#1a56db", disabled = f
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
       onTouchEnd={handleEnd}
     >
-      {/* Background fill */}
-      <div
-        className="absolute inset-y-0 left-0 transition-all duration-75 rounded-full"
-        style={{
-          width: `${progress * 100}%`,
-          background: `${color}33`,
-        }}
-      />
-      {/* Label */}
-      <div
-        className="absolute inset-0 flex items-center justify-center text-sm font-semibold"
-        style={{ color: color, paddingLeft: 72 }}
-      >
-        {completed ? "✓ Done" : label}
+      {/* Shimmer label */}
+      <div className={cn("absolute inset-0 flex items-center justify-center gap-2 text-sm font-bold pl-14 pr-4", toneClasses.text)}>
+        {completed ? (
+          <span className="inline-flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            Done
+          </span>
+        ) : (
+          <>
+            <ChevronsRight className={cn("size-4 shrink-0", !isDragging && "animate-pulse")} aria-hidden />
+            <span className="truncate">{label}</span>
+          </>
+        )}
       </div>
       {/* Thumb */}
       <div
-        className="absolute top-1 bottom-1 rounded-full flex items-center justify-center shadow-md transition-all duration-150"
+        className={cn(
+          "absolute top-1 bottom-1 rounded-xl flex items-center justify-center text-white shadow-raised",
+          toneClasses.thumb,
+          !isDragging && "transition-[left] duration-200"
+        )}
         style={{
           width: 48,
-          left: 4 + progress * (containerWidth - 56 - 8),
-          background: `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`,
+          left: 4 + progress * Math.max(containerWidth - 56, 0),
         }}
       >
-        {icon ?? <ChevronRight size={20} color="white" />}
+        {icon ?? <ChevronsRight className="size-5" aria-hidden />}
       </div>
     </div>
   );

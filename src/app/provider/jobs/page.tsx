@@ -1,76 +1,133 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { StatusBadge } from "@/components/StatusBadge";
-import { getServiceIcon } from "@/lib/serviceIcons";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import Link from "next/link";
+import { Briefcase, ChevronRight } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { bookingRef, formatDate, formatINR } from "@/lib/format";
+import { ServiceIcon } from "@/lib/serviceIcons";
+import { StatusBadge } from "@/components/ui/badge";
+import { PageContainer, PageHeader } from "@/components/ui/page-header";
+import { SegmentedTabs } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/ui/states";
+
+type Tab = "active" | "done" | "all";
+
+interface JobItem {
+  booking: {
+    id: string;
+    status: string;
+    serviceDescription: string;
+    finalPrice?: string | null;
+    createdAt: string;
+  };
+  category: { name: string } | null;
+}
+
+const ACTIVE = [
+  "quoted",
+  "provider_selected",
+  "accepted",
+  "arrived_pending_confirmation",
+  "arrived",
+  "price_change_pending",
+  "price_confirmed",
+  "work_started",
+  "completed_pending_confirmation",
+];
+const DONE = ["completed", "paid", "rated", "cancelled", "cancellation_pending", "disputed"];
 
 export default function ProviderJobsPage() {
-  const router = useRouter();
-  const [jobs, setJobs] = useState<{
-    booking: { id: string; status: string; serviceDescription: string; finalPrice?: string | null; createdAt: string };
-    category: { name: string } | null;
-  }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<JobItem[] | null>(null);
+  const [tab, setTab] = useState<Tab>("active");
 
   useEffect(() => {
     apiFetch("/api/bookings?role=provider")
       .then((r) => r.json())
-      .then((d) => setJobs((d.bookings ?? []).filter((b: { booking: { status: string } }) => b.booking.status !== "submitted")))
-      .finally(() => setLoading(false));
+      .then((d) => setJobs((d.bookings ?? []).filter((b: JobItem) => b.booking.status !== "submitted")))
+      .catch(() => setJobs([]));
   }, []);
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-4 pt-4 md:pt-4 pb-4 sticky top-0 md:top-16 z-20">
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <button onClick={() => router.push("/provider")} className="p-2 hover:bg-slate-100 rounded-xl">
-            <ArrowLeft size={20} className="text-slate-700" />
-          </button>
-          <h1 className="font-bold text-slate-900 text-lg">My Jobs</h1>
-        </div>
-      </div>
+  const activeJobs = (jobs ?? []).filter(({ booking }) => ACTIVE.includes(booking.status));
+  const doneJobs = (jobs ?? []).filter(({ booking }) => DONE.includes(booking.status));
+  const visible = tab === "active" ? activeJobs : tab === "done" ? doneJobs : (jobs ?? []);
 
-      <div className="p-4 max-w-6xl mx-auto w-full">
-        {loading && <div className="flex justify-center py-12"><LoadingSpinner /></div>}
-        {!loading && jobs.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-5xl mb-4">💼</div>
-            <h2 className="font-bold text-slate-700 mb-2">No Jobs Yet</h2>
-            <p className="text-sm text-slate-500">Jobs you are assigned to will appear here.</p>
+  return (
+    <PageContainer width="default">
+      <PageHeader
+        backHref="/provider"
+        title="My jobs"
+        description="Jobs you're assigned to — track status and act right from the card."
+      />
+
+      <SegmentedTabs
+        aria-label="Filter jobs"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "active", label: "Active", count: activeJobs.length },
+          { value: "done", label: "Completed", count: doneJobs.length },
+          { value: "all", label: "All", count: (jobs ?? []).length },
+        ]}
+      />
+
+      <div className="mt-5">
+        {jobs === null ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton h-40 rounded-2xl" />
+            ))}
           </div>
-        )}
-        <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
-          {jobs.map(({ booking, category }) => (
-            <button
-              key={booking.id}
-              onClick={() => router.push(`/provider/jobs/${booking.id}`)}
-              className="w-full bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-all text-left"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-2xl">
-                  {getServiceIcon(category?.name ?? "")}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-slate-800">{category?.name ?? "Service"}</div>
-                  <div className="text-xs text-slate-500 truncate mt-0.5">{booking.serviceDescription}</div>
-                  <div className="mt-2">
+        ) : visible.length === 0 ? (
+          <EmptyState
+            icon={<Briefcase />}
+            title={tab === "active" ? "No active jobs" : tab === "done" ? "No completed jobs yet" : "No jobs yet"}
+            description={
+              tab === "active"
+                ? "Quote on open requests — when a customer selects you, the job lands here."
+                : "Your finished and settled jobs will be listed here."
+            }
+          />
+        ) : (
+          <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visible.map(({ booking, category }) => (
+              <li key={booking.id}>
+                <Link
+                  href={`/provider/jobs/${booking.id}`}
+                  className="group flex flex-col h-full rounded-2xl border border-line bg-panel p-4 shadow-card hover:shadow-raised hover:border-brand-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="size-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0" aria-hidden>
+                        <ServiceIcon category={category?.name} size={20} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-ink-900 truncate">{category?.name ?? "Service"}</p>
+                        <p className="text-2xs text-ink-400 font-mono">{bookingRef(booking.id)}</p>
+                      </div>
+                    </div>
+                    {booking.finalPrice && (
+                      <p className="text-sm font-extrabold text-ink-900 tabular-nums shrink-0">{formatINR(booking.finalPrice)}</p>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-sm text-ink-600 leading-relaxed line-clamp-2 flex-1">{booking.serviceDescription}</p>
+
+                  <div className="mt-4 pt-3 border-t border-line flex items-center justify-between gap-2">
                     <StatusBadge status={booking.status} size="sm" />
+                    <span className="text-xs text-ink-400">{formatDate(booking.createdAt)}</span>
                   </div>
-                </div>
-                {booking.finalPrice && (
-                  <div className="text-right flex-shrink-0">
-                    <div className="font-bold text-green-700">₹{parseFloat(booking.finalPrice).toFixed(0)}</div>
-                    <div className="text-xs text-slate-400">service fee</div>
-                  </div>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
+
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Open job
+                    <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

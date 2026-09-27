@@ -1,87 +1,111 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, MapPin, Clock, ChevronRight } from "lucide-react";
-import { getServiceIcon } from "@/lib/serviceIcons";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
+import Link from "next/link";
+import { ChevronRight, Clock, Inbox, MapPin, Zap } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { bookingRef, formatDateTime } from "@/lib/format";
+import { ServiceIcon } from "@/lib/serviceIcons";
+import { PageContainer, PageHeader } from "@/components/ui/page-header";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/states";
+
+interface LeadItem {
+  booking: {
+    id: string;
+    status: string;
+    serviceDescription: string;
+    address: string;
+    city?: string | null;
+    createdAt: string;
+    isEmergency?: boolean | null;
+  };
+  category: { name: string } | null;
+}
 
 export default function ProviderRequestsPage() {
-  const router = useRouter();
-  const [requests, setRequests] = useState<{
-    booking: { id: string; status: string; serviceDescription: string; address: string; city?: string | null; createdAt: string; isEmergency?: boolean | null };
-    category: { name: string } | null;
-  }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [requests, setRequests] = useState<LeadItem[] | null>(null);
 
   useEffect(() => {
     apiFetch("/api/bookings?role=provider")
       .then((r) => r.json())
       .then((d) => {
         const all = d.bookings ?? [];
-        setRequests(all.filter((b: { booking: { status: string } }) => b.booking.status === "submitted"));
+        setRequests(all.filter((b: LeadItem) => b.booking.status === "submitted"));
       })
-      .finally(() => setLoading(false));
+      .catch(() => setRequests([]));
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-4 pt-4 md:pt-4 pb-4 sticky top-0 md:top-16 z-20">
-        <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <button onClick={() => router.push("/provider")} className="p-2 hover:bg-slate-100 rounded-xl">
-            <ArrowLeft size={20} className="text-slate-700" />
-          </button>
-          <h1 className="font-bold text-slate-900 text-lg">New Service Requests</h1>
-        </div>
-      </div>
+    <PageContainer width="default">
+      <PageHeader
+        backHref="/provider"
+        title="New service requests"
+        description="Broadcasts matching your skills and service area — quote fast to win the job."
+      />
 
-      <div className="p-4 max-w-5xl mx-auto w-full">
-        {loading && <div className="flex justify-center py-12"><LoadingSpinner label="Loading requests..." /></div>}
-
-        {!loading && requests.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-5xl mb-4">📥</div>
-            <h2 className="font-bold text-slate-700 mb-2">No New Requests</h2>
-            <p className="text-sm text-slate-500">Requests matching your skills and service area will appear here.</p>
-          </div>
-        )}
-
-        <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
-          {requests.map(({ booking, category }) => (
-            <button
-              key={booking.id}
-              onClick={() => router.push(`/provider/requests/${booking.id}`)}
-              className={`w-full bg-white rounded-2xl p-4 shadow-sm border-2 hover:shadow-md transition-all text-left ${
-                booking.isEmergency ? "border-red-200" : "border-slate-100 hover:border-blue-200"
-              }`}
-            >
-              {booking.isEmergency && (
-                <div className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full mb-2">
-                  🚨 EMERGENCY
-                </div>
-              )}
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0">
-                  {getServiceIcon(category?.name ?? "")}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-slate-800">{category?.name ?? "Service"}</div>
-                  <div className="text-sm text-slate-500 mt-0.5 line-clamp-2">{booking.serviceDescription}</div>
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="flex items-center gap-1 text-xs text-slate-400">
-                      <MapPin size={10} /> {booking.city ?? booking.address}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400">
-                      <Clock size={10} /> {new Date(booking.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight size={16} className="text-slate-400 flex-shrink-0 mt-2" />
-              </div>
-            </button>
+      {requests === null ? (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="skeleton h-36 rounded-2xl" />
           ))}
         </div>
-      </div>
-    </div>
+      ) : requests.length === 0 ? (
+        <EmptyState
+          icon={<Inbox />}
+          title="No open requests"
+          description="New customer broadcasts will appear here the moment they arrive. Keep your availability on."
+        />
+      ) : (
+        <ul className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {requests.map(({ booking, category }) => (
+            <li key={booking.id}>
+              <Link
+                href={`/provider/requests/${booking.id}`}
+                className="group flex flex-col h-full rounded-2xl border border-line bg-panel p-4 shadow-card hover:shadow-raised hover:border-brand-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="size-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0" aria-hidden>
+                      <ServiceIcon category={category?.name} size={20} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-ink-900 truncate">{category?.name ?? "Service"}</p>
+                      <p className="text-2xs text-ink-400 font-mono">{bookingRef(booking.id)}</p>
+                    </div>
+                  </div>
+                  {booking.isEmergency && (
+                    <Badge intent="danger" dot={false}>
+                      <Zap className="size-3 mr-0.5" aria-hidden />
+                      Emergency
+                    </Badge>
+                  )}
+                </div>
+
+                <p className="mt-3 text-sm text-ink-600 leading-relaxed line-clamp-2 flex-1">
+                  {booking.serviceDescription}
+                </p>
+
+                <div className="mt-4 pt-3 border-t border-line space-y-1.5 text-xs text-ink-500">
+                  <span className="flex items-center gap-1.5 truncate">
+                    <MapPin className="size-3.5 text-accent-600 shrink-0" aria-hidden />
+                    {booking.city ?? booking.address}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="size-3.5 shrink-0" aria-hidden />
+                    {formatDateTime(booking.createdAt)}
+                  </span>
+                </div>
+
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-700">
+                  Open & quote
+                  <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </PageContainer>
   );
 }
