@@ -192,10 +192,8 @@ def setup_backend(project_dir: Path, force: bool = False) -> None:
 
     if sys.platform == "win32":
         pip_cmd = venv_dir / "Scripts" / "pip.exe"
-        python_cmd = venv_dir / "Scripts" / "python.exe"
     else:
         pip_cmd = venv_dir / "bin" / "pip"
-        python_cmd = venv_dir / "bin" / "python"
 
     if venv_dir.exists() and pip_cmd.exists() and not force:
         log_info("Backend virtual environment found (.venv).")
@@ -342,6 +340,8 @@ def kill_process_tree(pid: int):
 
 
 def main():
+    global BACKEND_PORT  # declared first so all references below are valid
+
     # Enable ANSI colors on Windows terminals
     if sys.platform == "win32":
         os.system("")
@@ -353,7 +353,6 @@ def main():
     parser.add_argument("--backend-port", type=int, default=BACKEND_PORT, help="Backend port (default: 8000)")
     args = parser.parse_args()
 
-    global BACKEND_PORT
     BACKEND_PORT = args.backend_port
 
     project_dir = Path(__file__).resolve().parent
@@ -384,9 +383,6 @@ def main():
         log_success("Node.js detected.")
 
     npm_cmd = get_npm_command()
-    if not npm_cmd:
-        log_error("npm was not found in your PATH.")
-        sys.exit(1)
     log_success(f"Package manager detected ({npm_cmd})")
 
     python_cmd = get_python_command()
@@ -463,7 +459,12 @@ def main():
     dev_process = None
 
     try:
-        cmd = [npm_cmd, "run", "dev", "--", "-p", str(port)]
+        # On Windows, shell=True + list is unreliable; use a plain string instead.
+        # PORT is already exported via server_env so no need for the -p flag.
+        if use_shell:
+            cmd = f'"{npm_cmd}" run dev'
+        else:
+            cmd = [npm_cmd, "run", "dev"]
         dev_process = subprocess.Popen(
             cmd,
             cwd=str(project_dir),
