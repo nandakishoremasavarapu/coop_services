@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, TrendingUp, DollarSign, CheckCircle } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 export default function ProviderEarningsPage() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function ProviderEarningsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/bookings?role=provider")
+    apiFetch("/api/bookings?role=provider")
       .then((r) => r.json())
       .then((d) => setJobs(d.bookings ?? []))
       .finally(() => setLoading(false));

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import CustomerNav from "@/app/customer/CustomerNav";
+import { apiFetch } from "@/lib/api";
 
 type ActiveCustomerModal = "details" | "notifications" | "privacy" | "language" | "support" | null;
 
@@ -39,7 +40,7 @@ export default function CustomerProfilePage() {
   const [ticketSuccess, setTicketSuccess] = useState("");
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    apiFetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
         setProfile(d.user);
@@ -59,7 +60,7 @@ export default function CustomerProfilePage() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await apiFetch("/api/auth/logout", { method: "POST" });
     router.push("/");
     router.refresh();
   };

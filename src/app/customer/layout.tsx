@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getServerSession } from "@/lib/session";
 import CustomerNav from "./CustomerNav";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+  const session = await getServerSession();
   if (!session) redirect("/");
   if (session.role !== "customer") {
     if (session.role === "provider") redirect("/provider");

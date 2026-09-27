@@ -7,6 +7,7 @@ import SahakariEmblem from "@/components/SahakariEmblem";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StarRating } from "@/components/StarRating";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 interface ProviderProfile {
   id?: string;
@@ -67,7 +68,7 @@ export default function ProviderProfilePage() {
 
   const fetchProfileData = async () => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await apiFetch("/api/auth/me");
       if (res.ok) {
         const d = await res.json();
         setUser(d.user);
@@ -104,7 +105,7 @@ export default function ProviderProfilePage() {
     if (!profile?.id) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/providers/${profile.id}`, {
+      const res = await apiFetch(`/api/providers/${profile.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -129,7 +130,7 @@ export default function ProviderProfilePage() {
     if (!profile?.id) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/providers/${profile.id}`, {
+      const res = await apiFetch(`/api/providers/${profile.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -175,7 +176,7 @@ export default function ProviderProfilePage() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await apiFetch("/api/auth/logout", { method: "POST" });
     router.push("/");
     router.refresh();
   };

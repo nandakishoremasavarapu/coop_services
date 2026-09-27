@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 interface Notification {
   id: string;
@@ -17,7 +18,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    fetch("/api/notifications")
+    apiFetch("/api/notifications")
       .then((r) => r.json())
       .then((d) => setNotifications(d.notifications ?? []));
   }, []);

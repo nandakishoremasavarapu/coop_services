@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getServiceIcon } from "@/lib/serviceIcons";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 export default function ProviderJobsPage() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function ProviderJobsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/bookings?role=provider")
+    apiFetch("/api/bookings?role=provider")
       .then((r) => r.json())
       .then((d) => setJobs((d.bookings ?? []).filter((b: { booking: { status: string } }) => b.booking.status !== "submitted")))
       .finally(() => setLoading(false));

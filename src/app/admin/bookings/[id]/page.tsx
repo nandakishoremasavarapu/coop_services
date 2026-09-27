@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle, Clock } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 interface BookingData {
   booking: { id: string; status: string; serviceDescription: string; address: string; createdAt: string; updatedAt: string; finalPrice?: string | null; platformFee?: string | null; totalAmount?: string | null };
@@ -25,7 +26,7 @@ export default function AdminBookingDetailPage({ params }: { params: Promise<{ i
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/bookings/${id}`)
+    apiFetch(`/api/bookings/${id}`)
       .then((r) => r.json())
       .then((d) => setData(d as BookingData))
       .finally(() => setLoading(false));

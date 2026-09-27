@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { DollarSign, CreditCard, CheckCircle } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 export default function AdminTransactionsPage() {
   const [bookings, setBookings] = useState<{
@@ -11,7 +12,7 @@ export default function AdminTransactionsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/bookings?role=society_admin")
+    apiFetch("/api/bookings?role=society_admin")
       .then((r) => r.json())
       .then((d) => setBookings((d as { bookings: typeof bookings }).bookings?.filter((b: { booking: { status: string } }) =>
         ["paid", "rated"].includes(b.booking.status)) ?? []))

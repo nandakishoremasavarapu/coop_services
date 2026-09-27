@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/lib/api";
 import { useState, useEffect } from "react";
 import {
   Users,
@@ -68,13 +69,13 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let isMounted = true;
     Promise.all([
-      fetch("/api/admin/stats")
+      apiFetch("/api/admin/stats")
         .then((r) => r.json())
         .catch((err) => {
           console.warn("[Admin Dashboard] Failed to fetch stats:", err);
           return null;
         }),
-      fetch("/api/bookings?role=society_admin")
+      apiFetch("/api/bookings?role=society_admin")
         .then((r) => r.json())
         .catch((err) => {
           console.warn("[Admin Dashboard] Failed to fetch bookings:", err);

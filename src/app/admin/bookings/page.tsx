@@ -4,6 +4,7 @@ import { Search, ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import Link from "next/link";
+import { apiFetch } from "@/lib/api";
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<{
@@ -16,7 +17,7 @@ export default function AdminBookingsPage() {
   const [filterStatus, setFilterStatus] = useState("all");
 
   useEffect(() => {
-    fetch("/api/bookings?role=society_admin")
+    apiFetch("/api/bookings?role=society_admin")
       .then((r) => r.json())
       .then((d) => setBookings((d as { bookings: typeof bookings }).bookings ?? []))
       .finally(() => setLoading(false));

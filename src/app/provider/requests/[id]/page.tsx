@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, MapPin, Clock, AlertTriangle, CheckCircle, DollarSign } from "lucide-react";
 import { getServiceIcon } from "@/lib/serviceIcons";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { apiFetch } from "@/lib/api";
 
 interface BookingData {
   booking: {
@@ -35,7 +36,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/bookings/${id}`)
+    apiFetch(`/api/bookings/${id}`)
       .then((r) => r.json())
       .then((d) => setData(d as BookingData))
       .finally(() => setLoading(false));
@@ -45,7 +46,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
     if (!estimateAmount) return;
     setSubmitting(true);
     try {
-      const res = await fetch("/api/quotes", {
+      const res = await apiFetch("/api/quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

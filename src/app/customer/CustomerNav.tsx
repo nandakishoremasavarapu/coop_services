@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SahakariEmblem from "@/components/SahakariEmblem";
+import { apiFetch } from "@/lib/api";
 
 const navItems = [
   { href: "/customer", icon: "grid_view", label: "Home" },
@@ -18,7 +19,7 @@ export default function CustomerNav() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await apiFetch("/api/auth/logout", { method: "POST" });
       router.push("/");
     } catch (err) {
       console.error("Logout error:", err);

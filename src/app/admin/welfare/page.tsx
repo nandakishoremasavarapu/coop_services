@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState, useEffect } from "react";
 import {
   Shield,
@@ -127,7 +128,7 @@ export default function AdminWelfarePage() {
 
   const fetchWelfareData = async () => {
     try {
-      const res = await fetch("/api/admin/welfare");
+      const res = await apiFetch("/api/admin/welfare");
       const data = await res.json();
       if (data?.stats) setStats(data.stats);
       if (Array.isArray(data?.schemes)) setSchemes(data.schemes);
@@ -146,7 +147,7 @@ export default function AdminWelfarePage() {
 
   const handleApproveClaim = async (claimId: string) => {
     try {
-      const res = await fetch("/api/admin/welfare", {
+      const res = await apiFetch("/api/admin/welfare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "approve_claim", claimId }),
@@ -164,7 +165,7 @@ export default function AdminWelfarePage() {
 
   const handleRejectClaim = async (claimId: string) => {
     try {
-      const res = await fetch("/api/admin/welfare", {
+      const res = await apiFetch("/api/admin/welfare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "reject_claim", claimId, reason: "Documentation audit required" }),
@@ -183,7 +184,7 @@ export default function AdminWelfarePage() {
   const handleSubmitNewClaim = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/admin/welfare", {
+      const res = await apiFetch("/api/admin/welfare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -210,7 +211,7 @@ export default function AdminWelfarePage() {
   const handleDispatchRelief = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/admin/welfare", {
+      const res = await apiFetch("/api/admin/welfare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
