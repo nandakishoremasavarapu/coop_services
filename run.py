@@ -233,8 +233,44 @@ def setup_backend(project_dir: Path, force: bool = False) -> None:
         sys.exit(1)
 
 
+def find_chrome_path() -> str | None:
+    """Locate the Google Chrome executable on the current platform."""
+    if sys.platform == "win32":
+        candidates = [
+            os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
+        ]
+        for path in candidates:
+            if os.path.isfile(path):
+                return path
+    elif sys.platform == "darwin":
+        mac_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        if os.path.isfile(mac_path):
+            return mac_path
+    else:
+        for name in ("google-chrome", "google-chrome-stable", "chromium-browser", "chromium"):
+            found = shutil.which(name)
+            if found:
+                return found
+    return None
+
+
+def open_in_chrome(url: str) -> bool:
+    """Open *url* in Google Chrome. Returns True on success, False if Chrome was not found."""
+    chrome = find_chrome_path()
+    if chrome:
+        try:
+            subprocess.Popen([chrome, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            log_success(f"Opened in Google Chrome: {url}")
+            return True
+        except Exception as e:
+            log_warn(f"Found Chrome at '{chrome}' but could not launch it: {e}")
+    return False
+
+
 def wait_and_open_browser(target_url: str, port: int, stop_event: threading.Event):
-    """Waits until the server is reachable and then opens the default browser."""
+    """Waits until the server is reachable and then opens the app in Chrome (or default browser)."""
     log_info(f"Waiting for server to become ready on port {port}...")
     start_time = time.time()
     max_wait_seconds = 180
@@ -267,11 +303,14 @@ def wait_and_open_browser(target_url: str, port: int, stop_event: threading.Even
     log_success(f"Application is LIVE at {Colors.BOLD}{target_url}{Colors.RESET}")
     log_info(f"FastAPI backend : http://localhost:{BACKEND_PORT}  (docs: /docs)")
     log_info(f"MongoDB         : configured via backend/.env -> MONGODB_URI")
-    log_info("Opening the app in your default web browser...")
+    log_info("Opening the app in Google Chrome...")
     print("=" * 60 + "\n")
 
     try:
-        webbrowser.open(target_url)
+        launched = open_in_chrome(target_url)
+        if not launched:
+            log_warn("Google Chrome was not found. Falling back to the default browser...")
+            webbrowser.open(target_url)
     except Exception as e:
         log_warn(f"Could not open browser automatically: {e}")
         log_info(f"Please open your browser manually and visit: {target_url}")
